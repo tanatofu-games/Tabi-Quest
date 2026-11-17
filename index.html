@@ -1,0 +1,2116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Tabi Quest</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tabi Quest">
+<meta name="theme-color" content="#12172b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<style>
+:root{
+  --bg:#12172b; --panel:#1d2442; --panel2:#283160; --line:#3a4580;
+  --text:#f2f4ff; --muted:#a3acd0;
+  --good:#5fb0ff;   /* blue  = correct (always shown with a check mark and text) */
+  --bad:#ffb14a;    /* orange = wrong  (always shown with an X mark and text) */
+  --enemy:#c896ff; --yen:#ffe27a;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+  -webkit-user-select:none;user-select:none;touch-action:manipulation;overscroll-behavior:none}
+[lang="ja"]{font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",-apple-system,sans-serif}
+#app{max-width:480px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;
+  padding:calc(env(safe-area-inset-top) + 10px) 14px calc(env(safe-area-inset-bottom) + 14px)}
+button{font:inherit;color:inherit;border:0;cursor:pointer}
+h1{font-size:34px;margin:18px 0 2px;letter-spacing:.5px}
+h2{font-size:22px;margin:0 0 8px}
+.sub{color:var(--muted);margin:0 0 16px;line-height:1.4}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.big{display:block;width:100%;padding:16px;border-radius:14px;background:var(--good);color:#0b1330;font-weight:700;font-size:19px;margin-bottom:10px}
+.ghost{display:block;width:100%;padding:13px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);font-size:16px;margin-bottom:10px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.tog{min-width:74px;padding:9px 10px;border-radius:10px;background:var(--panel2);border:2px solid var(--line);font-weight:700}
+.tog.on{border-color:var(--good);background:#22407a}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--panel2);border-radius:10px;padding:10px;text-align:center}
+.stat b{display:block;font-size:20px}
+.stat span{color:var(--muted);font-size:12px}
+.yen{color:var(--yen);font-weight:700}
+.note{color:var(--muted);font-size:13px;line-height:1.45}
+
+/* ---------- fight ---------- */
+.top{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:8px}
+.top .where{flex:1;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini{width:40px;height:36px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);font-size:17px}
+.enemy{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;gap:12px;align-items:center}
+.enemy.elite{border:2px dashed var(--yen)}
+.enemy.boss{border:2px solid var(--enemy)}
+.bossp{min-height:0;padding-top:6px}
+.goal{font-size:13px;color:var(--yen);margin-bottom:8px;text-align:left}
+.bub{background:var(--panel);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:10px 12px;margin-bottom:10px;text-align:left}
+.bub.you{border-radius:14px 14px 4px 14px;color:var(--muted);font-size:14px;text-align:right}
+.bub .who{font-size:11px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;margin-bottom:3px}
+.bub .bj{font-size:26px;font-weight:700;line-height:1.3;word-break:break-word}
+.bub .bj.sm{font-size:20px}
+.bub .hear{display:block;margin:4px auto}
+.bub #hid{text-align:center}
+.link{background:none;color:var(--good);font-size:13px;padding:6px 0 0;text-decoration:underline}
+.bossp .main.en{font-size:19px}
+.tagline{color:var(--yen);font-weight:700;font-size:12px;letter-spacing:1px}
+.enemy .face{font-size:38px;line-height:1}
+.enemy .info{flex:1;min-width:0}
+.enemy .name{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.enemy .tag{font-size:11px;color:var(--yen);font-weight:700;letter-spacing:.4px}
+.bar{height:14px;background:#0c1022;border-radius:8px;overflow:hidden;margin-top:5px;border:1px solid var(--line)}
+.bar i{display:block;height:100%;transition:width .25s}
+.bar.e i{background:repeating-linear-gradient(45deg,var(--enemy),var(--enemy) 6px,#a877e0 6px,#a877e0 12px)}
+.bar.p i{background:var(--good)}
+.hpnum{font-size:12px;color:var(--muted);margin-top:2px}
+.timer{height:8px;background:#0c1022;border-radius:6px;margin:10px 0 0;position:relative;overflow:hidden}
+.timer i{display:block;height:100%;background:#e9ecff;width:100%}
+.timer.fastzone i{background:var(--yen)}
+.timerlbl{font-size:11px;color:var(--muted);height:15px;margin-top:2px;text-align:right}
+.prompt{text-align:center;padding:8px 4px 10px;min-height:118px;display:flex;flex-direction:column;justify-content:center}
+.prompt .ask{color:var(--muted);font-size:14px;margin-bottom:6px}
+.prompt .main{font-weight:700;line-height:1.25;word-break:break-word}
+.prompt .rom{color:var(--muted);font-size:14px;margin-top:4px}
+.s1{font-size:54px}.s2{font-size:40px}.s3{font-size:29px}.s4{font-size:23px}
+.en{font-size:24px}
+.hear{margin:0 auto;width:120px;height:74px;border-radius:16px;background:var(--panel2);border:2px solid var(--line);font-size:34px}
+.opts{display:flex;flex-direction:column;gap:9px}
+.opt{position:relative;width:100%;min-height:54px;padding:8px 40px 8px 44px;border-radius:13px;background:var(--panel2);border:2px solid var(--line);font-size:18px;text-align:left;line-height:1.25}
+.opt .n{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:6px;background:#0c1022;color:var(--muted);font-size:12px;display:flex;align-items:center;justify-content:center}
+.opt .mk{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:22px;font-weight:900}
+.opt small{display:block;color:var(--muted);font-size:12px}
+.opt.right{border:3px solid var(--good);background:#1d3a70}
+.opt.right .mk{color:var(--good)}
+.opt.wrong{border:3px dashed var(--bad);background:#4a3415}
+.opt.wrong .mk{color:var(--bad)}
+.opt:disabled{opacity:1}
+.tray{min-height:58px;border:2px dashed var(--line);border-radius:13px;padding:7px;display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;align-items:center}
+.tray:empty::before{content:"Tap the pieces below in order";color:var(--muted);font-size:13px;padding-left:6px}
+.pool{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;min-height:54px}
+.tile{padding:10px 14px;border-radius:11px;background:var(--panel2);border:2px solid var(--line);font-size:21px;font-weight:600}
+.tile.used{visibility:hidden}
+.me{margin-top:auto;padding-top:12px}
+.me .line{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+.me .combo{color:var(--yen);font-weight:700}
+
+/* ---------- feedback sheet ---------- */
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;justify-content:center;pointer-events:none}
+.sheet .in{pointer-events:auto;width:100%;max-width:480px;background:#0d1226;border-top:4px solid var(--good);border-radius:18px 18px 0 0;
+  padding:14px 16px calc(env(safe-area-inset-bottom) + 14px);box-shadow:0 -10px 30px rgba(0,0,0,.5)}
+.sheet.miss .in{border-top:4px dashed var(--bad)}
+.sheet .head{font-size:20px;font-weight:800;display:flex;align-items:center;gap:8px}
+.sheet.hit .head{color:var(--good)} .sheet.miss .head{color:var(--bad)}
+.sheet .detail{color:var(--muted);font-size:14px;margin-top:3px}
+.ans{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0}
+.ans .lbl{font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+.ans .jp{font-size:28px;font-weight:700;line-height:1.3;word-break:break-word}
+.ans .jp.long{font-size:20px}
+.ans .rd{font-size:17px;margin-top:2px}
+.ans .rm{font-size:14px;color:var(--muted)}
+.ans .mn{font-size:17px;margin-top:4px;color:var(--yen)}
+.sheet .btns{display:flex;gap:8px}
+.sheet .btns .ghost{width:64px;margin:0;flex:none;font-size:20px;padding:10px}
+.sheet .btns .big{margin:0;flex:1;padding:13px}
+.sheet .in{max-height:88vh;overflow-y:auto}
+.why{background:#151b38;border-left:4px solid var(--yen);border-radius:8px;padding:8px 10px;margin:0 0 10px;font-size:14px;line-height:1.45}
+.why .lbl{font-size:11px;color:var(--yen);letter-spacing:.5px;text-transform:uppercase;font-weight:700}
+.why div+div{margin-top:5px}
+.abil{display:flex;gap:6px;margin-bottom:8px}
+.ab{flex:1;padding:9px 2px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);font-size:13px;white-space:nowrap}
+.ab:disabled{opacity:.4}
+.opt.gone{opacity:.25;text-decoration:line-through}
+.pick{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:14px;border-radius:14px;background:var(--panel);border:2px solid var(--line);margin-bottom:10px}
+.pick.rare{border:2px dashed var(--yen)}
+.pick .pi{font-size:34px;line-height:1}
+.pick b{display:block;font-size:17px;margin-bottom:2px}
+.pick b small{color:var(--muted);font-weight:400}
+.pick span span{color:var(--muted);font-size:14px;line-height:1.35}
+.shopit{display:flex;gap:10px;align-items:center}
+.si{font-size:30px}.sinfo{flex:1;min-width:0}
+.buy{min-width:84px;padding:9px;border-radius:10px;background:var(--good);color:#0b1330;font-weight:700;line-height:1.25}
+.buy.no{background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+.shake{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-4px)}}
+.pop{animation:pop .25s}
+@keyframes pop{50%{transform:scale(1.06)}}
+
+/* ---------- overlay ---------- */
+.over{position:fixed;inset:0;background:rgba(8,10,24,.92);z-index:10;display:flex;align-items:center;justify-content:center;padding:20px}
+.over .box{width:100%;max-width:420px}
+.center{text-align:center}
+.placejp{font-size:60px;font-weight:800;margin:6px 0}
+.missrow{padding:8px 0;border-bottom:1px solid var(--line)}
+.missrow:last-child{border-bottom:0}
+.missrow .a{font-size:19px;font-weight:700}
+.missrow .b{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   TABI QUEST  -  version 0.3  (fights, upgrades, abilities, shop, boss conversations)
+   =====================================================================
+
+   PART 1 OF 3:  THE WORD LIST
+   ---------------------------------------------------------------------
+   This is the one list of words, phrases and signs. To add a word,
+   add ONE new line anywhere under the place it belongs to.
+
+   Each line looks like this:
+
+        Japanese | reading in kana | English meaning | sign
+
+   - Use the | character between the parts.
+   - If the Japanese is already all kana, leave the reading empty:
+        コーヒー||coffee
+   - For phrases, put spaces between the words in the reading:
+        トイレはどこですか|トイレ は どこ です か|Where is the toilet?
+   - Add |sign at the end only if it is something you see on signs.
+   - Lines starting with @ name the place for the lines below them.
+     Places: airport, station, konbini, restaurant, temple, hotel, any
+   - Romaji is made automatically. You never type it.
+   ===================================================================== */
+const WORD_LIST = `
+@any
+すみません||Excuse me / sorry
+ありがとうございます|ありがとう ございます|Thank you
+こんにちは||Hello
+こんばんは||Good evening
+さようなら||Goodbye
+はい||yes
+いいえ||no
+お願いします|おねがいします|please (when asking)
+大丈夫です|だいじょうぶ です|It's okay / no thanks
+わかりません||I don't understand
+わかりました||I understand / got it
+もう一度お願いします|もういちど おねがいします|Once more, please
+ゆっくりお願いします|ゆっくり おねがいします|Slowly, please
+いくらですか|いくら です か|How much is it?
+どこですか|どこ です か|Where is it?
+これ||this
+それ||that (near you)
+あれ||that over there
+ここ||here
+どこ||where
+何|なに|what
+いつ||when
+一つ|ひとつ|one (thing)
+二つ|ふたつ|two (things)
+三つ|みっつ|three (things)
+大きい|おおきい|big
+小さい|ちいさい|small
+高い|たかい|expensive / tall
+安い|やすい|cheap
+近い|ちかい|near
+遠い|とおい|far
+新しい|あたらしい|new
+ごめんなさい||I'm sorry
+どういたしまして||You're welcome
+はじめまして||Nice to meet you
+トイレはどこですか|トイレ は どこ です か|Where is the toilet?
+日本語が少しわかります|にほんご が すこし わかります|I understand a little Japanese
+英語を話せますか|えいご を はなせます か|Can you speak English?
+これをください|これ を ください|This one, please
+これは何ですか|これ は なん です か|What is this?
+
+@airport
+空港|くうこう|airport
+出発|しゅっぱつ|departure|sign
+到着|とうちゃく|arrival|sign
+国際線|こくさいせん|international flights|sign
+国内線|こくないせん|domestic flights|sign
+搭乗口|とうじょうぐち|boarding gate|sign
+搭乗券|とうじょうけん|boarding pass
+パスポート||passport
+税関|ぜいかん|customs|sign
+入国|にゅうこく|entering the country|sign
+出国|しゅっこく|leaving the country|sign
+入国審査|にゅうこくしんさ|immigration check|sign
+手荷物|てにもつ|hand luggage|sign
+荷物|にもつ|luggage
+手荷物受取所|てにもつうけとりじょ|baggage claim|sign
+両替|りょうがえ|currency exchange|sign
+案内|あんない|information|sign
+受付|うけつけ|reception desk|sign
+飛行機|ひこうき|airplane
+便|びん|flight (number)
+航空券|こうくうけん|plane ticket
+座席|ざせき|seat
+窓側|まどがわ|window side
+通路側|つうろがわ|aisle side
+免税|めんぜい|tax-free|sign
+免税店|めんぜいてん|duty-free shop|sign
+遅延|ちえん|delayed|sign
+欠航|けっこう|flight cancelled|sign
+定刻|ていこく|on time|sign
+乗り継ぎ|のりつぎ|flight connection|sign
+外国人|がいこくじん|foreigner
+観光|かんこう|sightseeing
+旅行|りょこう|trip / travel
+アメリカ||America
+日本|にほん|Japan
+英語|えいご|English (language)
+日本語|にほんご|Japanese (language)
+タクシー||taxi
+バス||bus
+バス乗り場|バスのりば|bus boarding area|sign
+タクシー乗り場|タクシーのりば|taxi stand|sign
+エレベーター||elevator
+エスカレーター||escalator
+トイレ||toilet
+お手洗い|おてあらい|toilet (polite)|sign
+化粧室|けしょうしつ|toilet (on signs)|sign
+男|おとこ|man / men|sign
+女|おんな|woman / women|sign
+非常口|ひじょうぐち|emergency exit|sign
+入口|いりぐち|entrance|sign
+出口|でぐち|exit|sign
+充電|じゅうでん|charging (battery)
+携帯|けいたい|mobile phone
+地図|ちず|map
+観光です|かんこう です|I'm here for sightseeing
+二週間です|にしゅうかん です|It's two weeks
+荷物がありません|にもつ が ありません|My luggage is missing
+
+@station
+駅|えき|station
+電車|でんしゃ|train
+地下鉄|ちかてつ|subway|sign
+新幹線|しんかんせん|bullet train|sign
+切符|きっぷ|ticket
+きっぷうりば||ticket counter|sign
+改札|かいさつ|ticket gate|sign
+ホーム||platform
+番線|ばんせん|track number|sign
+乗り換え|のりかえ|transfer (trains)|sign
+乗り場|のりば|boarding area|sign
+片道|かたみち|one way
+往復|おうふく|round trip
+指定席|していせき|reserved seat|sign
+自由席|じゆうせき|non-reserved seat|sign
+グリーン車|グリーンしゃ|first-class car|sign
+禁煙|きんえん|no smoking|sign
+喫煙所|きつえんじょ|smoking area|sign
+普通|ふつう|local train|sign
+快速|かいそく|rapid train|sign
+急行|きゅうこう|express train|sign
+特急|とっきゅう|limited express|sign
+各駅停車|かくえきていしゃ|stops at every station|sign
+始発|しはつ|first train of the day
+終電|しゅうでん|last train of the day
+次|つぎ|next
+行き|ゆき|bound for|sign
+方面|ほうめん|direction / toward|sign
+東口|ひがしぐち|east exit|sign
+西口|にしぐち|west exit|sign
+南口|みなみぐち|south exit|sign
+北口|きたぐち|north exit|sign
+中央口|ちゅうおうぐち|central exit|sign
+右|みぎ|right
+左|ひだり|left
+まっすぐ||straight ahead
+運賃|うんちん|fare|sign
+精算|せいさん|fare adjustment|sign
+時刻表|じこくひょう|timetable|sign
+駅員|えきいん|station staff
+優先席|ゆうせんせき|priority seat|sign
+女性専用車|じょせいせんようしゃ|women-only car|sign
+コインロッカー||coin locker
+忘れ物|わすれもの|lost item|sign
+遅れ|おくれ|delay
+運休|うんきゅう|service suspended|sign
+危険|きけん|danger|sign
+注意|ちゅうい|caution|sign
+立入禁止|たちいりきんし|keep out|sign
+故障|こしょう|out of order|sign
+チャージ||top up (IC card)
+東京|とうきょう|Tokyo
+京都|きょうと|Kyoto
+大阪|おおさか|Osaka
+奈良|なら|Nara
+広島|ひろしま|Hiroshima
+次の駅|つぎ の えき|next station
+東京駅までお願いします|とうきょうえき まで おねがいします|To Tokyo Station, please
+この電車は京都に行きますか|この でんしゃ は きょうと に いきます か|Does this train go to Kyoto?
+乗り場はどこですか|のりば は どこ です か|Where is the boarding area?
+何番線ですか|なんばんせん です か|Which track is it?
+
+@konbini
+コンビニ||convenience store
+レジ||cash register
+袋|ふくろ|bag
+レジ袋|レジぶくろ|plastic shopping bag
+お弁当|おべんとう|boxed lunch
+おにぎり||rice ball
+パン||bread
+水|みず|water
+お茶|おちゃ|green tea
+コーヒー||coffee
+牛乳|ぎゅうにゅう|milk
+ジュース||juice
+ビール||beer
+お酒|おさけ|alcohol
+お菓子|おかし|snacks / sweets
+アイス||ice cream
+卵|たまご|egg
+サンドイッチ||sandwich
+からあげ||fried chicken
+肉まん|にくまん|steamed pork bun
+お箸|おはし|chopsticks
+スプーン||spoon
+フォーク||fork
+ストロー||straw
+現金|げんきん|cash
+カード||card
+クレジットカード||credit card
+お釣り|おつり|change (money back)
+レシート||receipt
+円|えん|yen
+百|ひゃく|hundred
+千|せん|thousand
+一万|いちまん|ten thousand
+税込|ぜいこみ|tax included|sign
+税抜|ぜいぬき|tax not included|sign
+半額|はんがく|half price|sign
+割引|わりびき|discount|sign
+無料|むりょう|free of charge|sign
+有料|ゆうりょう|fee required|sign
+営業中|えいぎょうちゅう|open for business|sign
+準備中|じゅんびちゅう|closed (preparing)|sign
+定休日|ていきゅうび|regular closing day|sign
+年中無休|ねんじゅうむきゅう|open all year|sign
+押す|おす|push|sign
+引く|ひく|pull|sign
+薬|くすり|medicine
+薬局|やっきょく|pharmacy|sign
+銀行|ぎんこう|bank|sign
+郵便局|ゆうびんきょく|post office|sign
+傘|かさ|umbrella
+電池|でんち|battery
+マスク||face mask
+ティッシュ||tissues
+歯ブラシ|はブラシ|toothbrush
+新商品|しんしょうひん|new product|sign
+期間限定|きかんげんてい|limited time only|sign
+売り切れ|うりきれ|sold out|sign
+温めますか|あたためます か|Shall I heat it up?
+袋はいりますか|ふくろ は いります か|Do you need a bag?
+袋をください|ふくろ を ください|A bag, please
+カードで払えますか|カード で はらえます か|Can I pay by card?
+お箸をください|おはし を ください|Chopsticks, please
+
+@restaurant
+レストラン||restaurant
+食堂|しょくどう|cafeteria / diner
+居酒屋|いざかや|Japanese pub|sign
+メニュー||menu
+英語のメニュー|えいご の メニュー|English menu
+注文|ちゅうもん|order
+お会計|おかいけい|the bill / check
+お水|おみず|water (polite)
+ご飯|ごはん|rice / meal
+肉|にく|meat
+牛肉|ぎゅうにく|beef
+豚肉|ぶたにく|pork
+鶏肉|とりにく|chicken (meat)
+魚|さかな|fish
+野菜|やさい|vegetables
+寿司|すし|sushi
+刺身|さしみ|sashimi
+天ぷら|てんぷら|tempura
+ラーメン||ramen
+うどん||udon noodles
+そば||soba noodles
+焼き鳥|やきとり|grilled chicken skewers
+とんかつ||pork cutlet
+カレー||curry
+味噌汁|みそしる|miso soup
+定食|ていしょく|set meal|sign
+食べ放題|たべほうだい|all you can eat|sign
+飲み放題|のみほうだい|all you can drink|sign
+大盛り|おおもり|large portion
+並|なみ|regular size|sign
+辛い|からい|spicy
+甘い|あまい|sweet
+おいしい||delicious
+熱い|あつい|hot (to touch)
+冷たい|つめたい|cold (to touch)
+生|なま|raw
+生ビール|なまビール|draft beer
+日本酒|にほんしゅ|sake (rice wine)
+醤油|しょうゆ|soy sauce
+塩|しお|salt
+わさび||wasabi
+一人|ひとり|one person
+二人|ふたり|two people
+予約|よやく|reservation
+満席|まんせき|no seats available|sign
+空席|くうせき|seats available|sign
+禁煙席|きんえんせき|non-smoking seat
+食券|しょっけん|meal ticket|sign
+券売機|けんばいき|ticket machine|sign
+おすすめ||recommendation
+アレルギー||allergy
+持ち帰り|もちかえり|takeout|sign
+店内|てんない|inside the shop / eat in
+いただきます||said before eating
+ごちそうさまでした||said after eating
+乾杯|かんぱい|cheers!
+おかわり||refill / second helping
+いらっしゃいませ||Welcome (shop greeting)
+何名様ですか|なんめいさま です か|How many in your party?
+少々お待ちください|しょうしょう おまち ください|Please wait a moment
+お会計をお願いします|おかいけい を おねがいします|The check, please
+おすすめは何ですか|おすすめ は なん です か|What do you recommend?
+二人です|ふたり です|There are two of us
+肉は食べません|にく は たべません|I don't eat meat
+お水をください|おみず を ください|Water, please
+
+@temple
+お寺|おてら|Buddhist temple
+神社|じんじゃ|Shinto shrine
+鳥居|とりい|shrine gate
+お守り|おまもり|good-luck charm
+おみくじ||fortune slip
+大吉|だいきち|great luck|sign
+凶|きょう|bad luck|sign
+御朱印|ごしゅいん|temple stamp
+拝観料|はいかんりょう|temple admission fee|sign
+入場料|にゅうじょうりょう|entrance fee|sign
+大人|おとな|adult|sign
+子供|こども|child|sign
+土足禁止|どそくきんし|no shoes allowed|sign
+撮影禁止|さつえいきんし|no photography|sign
+写真|しゃしん|photo
+靴|くつ|shoes
+庭|にわ|garden
+城|しろ|castle
+山|やま|mountain
+川|かわ|river
+橋|はし|bridge
+公園|こうえん|park
+博物館|はくぶつかん|museum
+美術館|びじゅつかん|art museum
+紅葉|こうよう|autumn leaves
+桜|さくら|cherry blossom
+温泉|おんせん|hot spring
+祭り|まつり|festival
+お土産|おみやげ|souvenir
+開館|かいかん|open (museum / hall)|sign
+閉館|へいかん|closed (museum / hall)|sign
+本日休業|ほんじつきゅうぎょう|closed today|sign
+営業時間|えいぎょうじかん|business hours|sign
+順路|じゅんろ|route (this way)|sign
+止まれ|とまれ|stop|sign
+静かに|しずかに|quietly, please|sign
+工事中|こうじちゅう|under construction|sign
+今日|きょう|today
+明日|あした|tomorrow
+昨日|きのう|yesterday
+朝|あさ|morning
+昼|ひる|noon / daytime
+夜|よる|night
+午前|ごぜん|a.m.
+午後|ごご|p.m.
+月曜日|げつようび|Monday
+火曜日|かようび|Tuesday
+水曜日|すいようび|Wednesday
+木曜日|もくようび|Thursday
+金曜日|きんようび|Friday
+土曜日|どようび|Saturday
+日曜日|にちようび|Sunday
+天気|てんき|weather
+雨|あめ|rain
+雪|ゆき|snow
+寒い|さむい|cold (weather)
+暑い|あつい|hot (weather)
+きれい||beautiful / clean
+古い|ふるい|old
+有名|ゆうめい|famous
+触らないでください|さわらないで ください|Please do not touch|sign
+ご遠慮ください|ごえんりょ ください|Please refrain|sign
+写真を撮ってもいいですか|しゃしん を とって も いい です か|May I take a photo?
+写真を撮ってください|しゃしん を とって ください|Please take a photo for us
+入口はどこですか|いりぐち は どこ です か|Where is the entrance?
+大人二枚ください|おとな にまい ください|Two adult tickets, please
+何時までですか|なんじ まで です か|Until what time?
+
+@hotel
+ホテル||hotel
+旅館|りょかん|traditional inn
+フロント||front desk
+チェックイン||check-in
+チェックアウト||check-out
+部屋|へや|room
+鍵|かぎ|key
+一泊|いっぱく|one night's stay
+二泊|にはく|two nights' stay
+朝食|ちょうしょく|breakfast
+夕食|ゆうしょく|dinner
+大浴場|だいよくじょう|large public bath|sign
+男湯|おとこゆ|men's bath|sign
+女湯|おんなゆ|women's bath|sign
+お風呂|おふろ|bath
+浴衣|ゆかた|light cotton kimono
+布団|ふとん|futon bedding
+タオル||towel
+シャワー||shower
+エアコン||air conditioner
+暖房|だんぼう|heating|sign
+冷房|れいぼう|cooling (A/C)|sign
+電気|でんき|electricity / lights
+ワイファイ||Wi-Fi
+パスワード||password
+階|かい|floor (of a building)
+一階|いっかい|first floor
+二階|にかい|second floor
+地下|ちか|basement|sign
+階段|かいだん|stairs|sign
+非常階段|ひじょうかいだん|emergency stairs|sign
+自動販売機|じどうはんばいき|vending machine
+洗濯|せんたく|laundry
+コインランドリー||coin laundry
+名前|なまえ|name
+住所|じゅうしょ|address
+電話番号|でんわばんごう|phone number
+お客様|おきゃくさま|guest / customer (polite)
+空室|くうしつ|rooms available|sign
+満室|まんしつ|no rooms available|sign
+清掃中|せいそうちゅう|cleaning in progress|sign
+使用中|しようちゅう|in use / occupied|sign
+開|ひらく|open (elevator button)|sign
+閉|しめる|close (elevator button)|sign
+大|だい|big flush (toilet button)|sign
+小|しょう|small flush (toilet button)|sign
+流す|ながす|flush|sign
+病院|びょういん|hospital
+警察|けいさつ|police
+交番|こうばん|police box|sign
+救急車|きゅうきゅうしゃ|ambulance
+頭|あたま|head
+お腹|おなか|stomach
+痛い|いたい|painful / it hurts
+助けて|たすけて|Help!
+時間|じかん|time
+何時|なんじ|what time
+おはようございます|おはよう ございます|Good morning
+おやすみなさい||Good night
+チェックインをお願いします|チェックイン を おねがいします|I'd like to check in, please
+予約しています|よやく して います|I have a reservation
+荷物を預かってもらえますか|にもつ を あずかって もらえます か|Could you hold my luggage?
+朝食は何時ですか|ちょうしょく は なんじ です か|What time is breakfast?
+鍵をなくしました|かぎ を なくしました|I lost my key
+タクシーを呼んでください|タクシー を よんで ください|Please call a taxi
+`;
+
+/* ---------------------------------------------------------------------
+   PARTICLE QUESTIONS.  One per line:
+     sentence with ＿ for the gap | reading | right particle | 3 wrong ones | English | why
+   --------------------------------------------------------------------- */
+const PARTICLE_LIST = `
+これ＿ください|これ ＿ ください|を|に,で,と|This one, please.|を marks the thing you want. [thing] を ください means "[thing], please."
+トイレ＿どこですか|トイレ ＿ どこ です か|は|を,に,で|Where is the toilet?|は marks the topic you are asking about. [place] は どこですか means "Where is [place]?"
+東京駅＿行きたいです|とうきょうえき ＿ いきたい です|に|を,で,と|I want to go to Tokyo Station.|に marks the destination with movement verbs like 行きます.
+カード＿払えますか|カード ＿ はらえます か|で|を,に,が|Can I pay by card?|で marks the tool or method. カードで means "by card."
+英語＿メニューはありますか|えいご ＿ メニュー は あります か|の|を,に,で|Do you have an English menu?|の links two nouns. 英語のメニュー means "English menu."
+写真＿撮ってもいいですか|しゃしん ＿ とって も いい です か|を|に,で,と|May I take a photo?|を marks the thing the action is done to. You take (撮る) a photo (写真).
+電車＿行きます|でんしゃ ＿ いきます|で|を,が,と|I'll go by train.|で marks the means of transport. 電車で means "by train."
+コーヒー＿お茶をください|コーヒー ＿ おちゃ を ください|と|を,に,で|Coffee and tea, please.|と joins two nouns. A と B means "A and B."
+京都＿大阪まで|きょうと ＿ おおさか まで|から|を,が,も|From Kyoto to Osaka.|から means "from." It pairs with まで: A から B まで means "from A to B."
+何時＿開いていますか|なんじ ＿ あいて います か|まで|を,と,が|Until what time are you open?|まで means "until." 何時まで means "until what time."
+日本語＿少しわかります|にほんご ＿ すこし わかります|が|を,に,で|I understand a little Japanese.|わかります uses が for the thing you understand. It does not use を.
+予約＿しています|よやく ＿ して います|を|に,で,と|I have a reservation.|を marks the object of します. 予約をします means "make a reservation."
+ここ＿食べます|ここ ＿ たべます|で|を,が,と|I'll eat here.|で marks the place where an action happens.
+七時＿起きます|しちじ ＿ おきます|に|を,で,と|I get up at seven.|に marks a clock time.
+友達＿来ました|ともだち ＿ きました|と|を,で,へ|I came with a friend.|と after a person means "with."
+これ＿何ですか|これ ＿ なん です か|は|を,に,で|What is this?|は marks the topic. [thing] は 何ですか means "What is [thing]?"
+お水＿お願いします|おみず ＿ おねがいします|を|に,と,へ|Water, please.|を marks the thing you are asking for.
+私＿アメリカ人です|わたし ＿ アメリカじん です|は|を,に,で|I am American.|は marks the topic. A は B です means "A is B."
+アメリカ＿来ました|アメリカ ＿ きました|から|を,が,と|I came from America.|から means "from" a starting place.
+部屋＿鍵|へや ＿ かぎ|の|を,に,で|The room key.|の links two nouns. The first describes the second. 部屋の鍵 is "the room's key."
+二階＿あります|にかい ＿ あります|に|を,と,へ|It's on the second floor.|に marks where something exists. It goes with あります and います.
+バス＿乗ります|バス ＿ のります|に|を,と,の|I'll get on the bus.|乗ります (get on) uses に for the vehicle. This is a classic trap. It is not を.
+次の駅＿降ります|つぎ の えき ＿ おります|で|と,の,が|I'll get off at the next station.|で marks the place where the action happens. Here the action is getting off.
+肉＿食べません|にく ＿ たべません|は|に,で,と|I don't eat meat.|In a negative sentence, は often replaces を. It means "as for meat, I don't eat it."
+これ＿あれ、どちらが安いですか|これ ＿ あれ、 どちら が やすい です か|と|を,に,で|Which is cheaper, this or that?|と joins the two things being compared.
+私＿ビールをお願いします|わたし ＿ ビール を おねがいします|も|を,で,と|A beer for me too, please.|も means "also" or "too." It takes the place of は.
+どこ＿買えますか|どこ ＿ かえます か|で|を,と,の|Where can I buy it?|で marks the place where an action happens. どこで means "at what place."
+東京＿ホテル|とうきょう ＿ ホテル|の|を,が,で|A hotel in Tokyo.|の links two nouns. 東京のホテル is "Tokyo's hotel."
+空港＿どうやって行きますか|くうこう ＿ どうやって いきます か|まで|を,と,が|How do I get to the airport?|まで means "as far as." 空港まで means "all the way to the airport."
+袋＿いりません|ふくろ ＿ いりません|は|に,で,と|I don't need a bag.|は marks the topic in a negative sentence. "As for a bag, I don't need one."
+明日＿朝|あした ＿ あさ|の|を,に,で|Tomorrow morning.|の links two nouns. 明日の朝 is "tomorrow's morning."
+駅＿前|えき ＿ まえ|の|を,で,と|In front of the station.|の links a place to a position word. 駅の前 is "the station's front."
+`;
+
+/* What each particle does. Used to explain a wrong pick. */
+const PARTICLE_INFO = {
+  'は':'marks the topic ("as for ...")',
+  'が':'marks the subject, or the thing you understand, like or can do',
+  'を':'marks the thing an action is done to',
+  'に':'marks a destination, a clock time, or where something exists',
+  'で':'marks where an action happens, or the tool or method used',
+  'へ':'marks a direction of travel',
+  'の':'links two nouns, like "\'s" or "of"',
+  'と':'means "and" between nouns, or "with" a person',
+  'も':'means "also" or "too"',
+  'から':'means "from"',
+  'まで':'means "until" or "as far as"'
+};
+
+/* ---------------------------------------------------------------------
+   SENTENCE ORDER QUESTIONS.  One per line:
+     pieces in the right order, spaces between | reading | English | why
+   --------------------------------------------------------------------- */
+const SENTENCE_LIST = `
+すみません トイレ は どこ ですか|すみません トイレ は どこ ですか|Excuse me, where is the toilet?|Open with すみません. Then [place] は どこ ですか. The question ending ですか goes last.
+これ を ください|これ を ください|This one, please.|The pattern is [thing] を ください. The request word comes last.
+お会計 を お願いします|おかいけい を おねがいします|The check, please.|The pattern is [thing] を お願いします. It works like ください.
+英語 の メニュー は ありますか|えいご の メニュー は ありますか|Do you have an English menu?|英語 の メニュー is one block: "English menu." Then は. Then ありますか ("is there?") goes last.
+東京駅 まで いくら ですか|とうきょうえき まで いくら ですか|How much is it to Tokyo Station?|まで follows the place: "to Tokyo Station." いくら ですか ("how much is it?") ends the sentence.
+この 電車 は 京都 に 行きますか|この でんしゃ は きょうと に いきますか|Does this train go to Kyoto?|この sits right before its noun. The topic and は come first. Then the destination and に. The verb goes last.
+写真 を 撮っても いいですか|しゃしん を とっても いいですか|May I take a photo?|[verb]ても いいですか means "May I ...?" The object and を come before the verb.
+カード で 払えますか|カード で はらえますか|Can I pay by card?|で follows the method (the card). The verb goes last.
+予約 を して います|よやく を して います|I have a reservation.|予約 を します means "make a reservation." して います means it is already done. います is always last.
+チェックイン を お願いします|チェックイン を おねがいします|Check-in, please.|The pattern is [thing] を お願いします.
+荷物 を 預かって もらえますか|にもつ を あずかって もらえますか|Could you hold my luggage?|[verb]て もらえますか means "Could you ... for me?" The object and を come first.
+朝食 は 何時 ですか|ちょうしょく は なんじ ですか|What time is breakfast?|The pattern is [topic] は [question word] ですか.
+もう一度 言って ください|もういちど いって ください|Please say it once more.|[verb]て ください means "Please do it." もう一度 (once more) comes before the verb.
+駅 は どこ ですか|えき は どこ ですか|Where is the station?|The pattern is [place] は どこ ですか.
+これ は 何 ですか|これ は なん ですか|What is this?|The pattern is [topic] は [question word] ですか.
+おすすめ は 何 ですか|おすすめ は なん ですか|What do you recommend?|The pattern is [topic] は [question word] ですか.
+水 を 二つ ください|みず を ふたつ ください|Two waters, please.|The count goes after を and before the request: [thing] を [number] ください.
+タクシー を 呼んで ください|タクシー を よんで ください|Please call a taxi.|[verb]て ください means "Please do it." The object and を come first.
+大人 二枚 ください|おとな にまい ください|Two adult tickets, please.|The order is [what] [how many] ください. The count follows the thing it counts.
+何時 まで 開いて いますか|なんじ まで あいて いますか|Until what time are you open?|まで follows the time word. 開いて います means "is open." いますか goes last.
+私 は アメリカ から 来ました|わたし は アメリカ から きました|I came from America.|The topic and は come first. から follows the place you came from. The verb goes last.
+肉 は 食べません|にく は たべません|I don't eat meat.|The topic and は come first. The verb goes last.
+この バス は 空港 に 行きますか|この バス は くうこう に いきますか|Does this bus go to the airport?|この sits right before its noun. Then は. Then the destination and に. The verb goes last.
+京都 まで 片道 一枚 ください|きょうと まで かたみち いちまい ください|One one-way ticket to Kyoto, please.|The destination and まで come first. Then the ticket type. Then the count. ください goes last.
+次 の 電車 は 何時 ですか|つぎ の でんしゃ は なんじ ですか|What time is the next train?|次 の 電車 is one block: "next train." Then は [question word] ですか.
+袋 は いりません|ふくろ は いりません|I don't need a bag.|The topic and は come first. The verb goes last.
+ここ で 食べます|ここ で たべます|I'll eat here.|で follows the place of the action. The verb goes last.
+部屋 の 鍵 を なくしました|へや の かぎ を なくしました|I lost my room key.|部屋 の 鍵 is one block: "room key." Then を. The verb goes last.
+窓側 の 席 を お願いします|まどがわ の せき を おねがいします|A window seat, please.|窓側 の 席 is one block: "window seat." Then を お願いします.
+`;
+
+/* ---------------------------------------------------------------------
+   KANJI HINTS.  Shown after a miss, to explain what a sign is made of.
+   Format:  kanji=meaning, separated by commas.
+   --------------------------------------------------------------------- */
+const KANJI_HINTS = `口=opening / gate,出=go out,入=go in,非=not,常=usual,駅=station,電=electric,車=vehicle,禁=forbidden,止=stop,煙=smoke,無=without,料=fee,有=has,税=tax,込=included,抜=taken out,国=country,際=between,内=inside,線=line,発=depart,着=arrive,東=east,西=west,南=south,北=north,中=middle / in progress,央=center,男=man,女=woman,大=big,小=small,人=person,子=child,水=water,肉=meat,魚=fish,牛=cow,豚=pig,鶏=chicken,食=eat,飲=drink,店=shop,券=ticket,機=machine,席=seat,満=full,空=empty / sky,室=room,館=hall / building,開=open,閉=close,営=run (a business),業=business,時=time / hour,間=interval,日=day / sun,本=origin / book,語=language,英=English,手=hand,荷=load,物=thing,乗=ride,換=exchange,場=place,所=place,急=hurry,特=special,速=fast,普=ordinary,通=pass through,指=point to,定=fixed,新=new,地=ground,下=under,鉄=iron,階=floor,段=step,湯=hot water,薬=medicine,局=office,銀=silver,行=go,半=half,額=amount,割=divide,引=pull,押=push,売=sell,切=cut,危=danger,注=pour / focus,意=mind,立=stand,土=soil,足=foot,撮=take (a photo),影=image,写=copy,真=true,朝=morning,夕=evening,夜=night,泊=stay overnight,予=beforehand,約=promise,免=exempt,両=both,替=exchange,案=plan,受=receive,付=attach,生=raw / life,酒=alcohol,茶=tea,金=gold / money,現=present,曜=day of the week,月=moon,火=fire,木=tree,天=sky,気=air / spirit,観=look at,光=light,旅=travel,温=warm,泉=spring,神=god,社=shrine,寺=temple,城=castle,園=garden / park,公=public,休=rest,年=year,先=ahead,優=priority,専=exclusive,用=use,性=gender,使=use,清=clean,掃=sweep,自=self,動=move,販=sell,便=flight / convenient,座=sit,窓=window,側=side,路=road,遅=late,延=extend,欠=lacking,航=sail / fly,港=port,飛=fly,片=one side,道=way,往=go,復=return,各=each,停=stop,始=begin,終=end,次=next,方=direction,面=side / face,運=carry,賃=fee,精=precise,算=calculate,刻=time mark,表=chart,員=staff,忘=forget,故=fault,障=block,袋=bag,弁=box lunch,当=hit / this,箸=chopsticks,釣=change (money),百=hundred,千=thousand,万=ten thousand,準=prepare,備=ready,郵=mail,傘=umbrella,池=pond,歯=tooth,商=trade,品=goods,期=period,限=limit,堂=hall,居=stay,屋=shop / roof,注=order / pour,文=text,会=meet,計=count,飯=cooked rice,野=field,菜=greens,寿=long life,司=manage,刺=pierce,身=body,焼=grill,鳥=bird,味=taste,噌=miso,汁=soup,盛=serve / pile,並=regular / line up,辛=spicy,甘=sweet,熱=hot,冷=cold,醤=sauce,油=oil,塩=salt,一=one,二=two,三=three,持=hold,帰=return,乾=dry,杯=cup,名=name,様=honorific,少=a little,待=wait`;
+
+/* =====================================================================
+   PART 2 OF 3:  GAME BALANCE  (safe numbers to tweak later)
+   ===================================================================== */
+const CFG = {
+  playerHP: 110,        // your health at the start of a run
+  restHeal: 25,         // health you get back between floors
+  baseDmg: 10,          // damage of a plain right answer
+  comboStep: 0.15,      // extra damage per answer in a streak
+  comboMax: 2.5,        // biggest combo multiplier
+  fastMult: 1.5,        // bonus for answering fast
+  enemiesPerFloor: 5,   // the last one on each floor is the boss conversation
+  enemyHP: 40, enemyHPperFloor: 13,
+  gateHP: 100, gateHPperFloor: 30,
+  eliteMult: 1.5,       // elites have this much more health
+  eliteChance: 0.4,     // chance a normal enemy is replaced by an elite
+  hurt: 9, hurtPerFloor: 2, gateHurtBonus: 4, eliteHurtBonus: 2,
+  timeChoice: 15, timeListen: 18, timeOrder: 32,   // seconds per question
+  fastChoice: 5, fastOrder: 12                     // "fast" means under this
+};
+
+const PLACES = [
+  {id:'airport',   jp:'空港',     name:'Airport',
+   foes:[['🧳','Runaway Suitcase'],['🛃','Customs Officer'],['😵','Jet Lag'],['📋','Arrival Form']], gate:['🛂','Immigration Line']},
+  {id:'station',   jp:'駅',       name:'Train Station',
+   foes:[['🚃','Rush-Hour Crowd'],['🎫','Ticket Machine'],['🗺️','Route Map Maze'],['⏱️','Departing Train']], gate:['🚅','Shinkansen Gate']},
+  {id:'konbini',   jp:'コンビニ', name:'Konbini',
+   foes:[['🍙','Onigiri Wrapper'],['🧃','Wall of Drinks'],['🔔','Door Chime'],['🛍️','The Bag Question']], gate:['🏪','Midnight Clerk']},
+  {id:'restaurant',jp:'レストラン',name:'Restaurant',
+   foes:[['🍜','Ramen Steam'],['📜','Kanji-Only Menu'],['🎟️','Meal Ticket Machine'],['🍶','Sake List']], gate:['👨‍🍳','Busy Chef']},
+  {id:'temple',    jp:'お寺',     name:'Temple',
+   foes:[['⛩️','Torii Shadow'],['🦌','Hungry Deer'],['📿','Fortune Slip'],['👟','Shoe Rack']], gate:['🦊','Shrine Fox']},
+  {id:'hotel',     jp:'ホテル',   name:'Hotel',
+   foes:[['🔑','Lost Key'],['🛗','Elevator Buttons'],['♨️','Bath Rules'],['🚽','Toilet Control Panel']], gate:['🛎️','Front Desk']}
+];
+
+/* =====================================================================
+   PART 3 OF 3:  THE GAME ITSELF  (no need to touch anything below)
+   ===================================================================== */
+
+/* ---------- reading the lists ---------- */
+const KANJI = /[一-鿿々]/;
+function lines(raw){ return raw.split('\n').map(s=>s.trim()).filter(s=>s && !s.startsWith('#')); }
+
+const WORDS = []; const WMAP = {};
+(function(){
+  let place = 'any';
+  for (const l of lines(WORD_LIST)){
+    if (l[0]==='@'){ place = l.slice(1).trim(); continue; }
+    const p = l.split('|').map(s=>s.trim());
+    if (!p[0] || !p[2] || WMAP[p[0]]) continue;
+    const w = {key:p[0], jp:p[0], kana:p[1]||p[0], mean:p[2], place:place, sign:p[3]==='sign'};
+    w.phrase = w.kana.indexOf(' ')>=0;
+    w.hasKanji = KANJI.test(w.jp);
+    WORDS.push(w); WMAP[w.key]=w;
+  }
+})();
+const PARTS = lines(PARTICLE_LIST).map(l=>{ const p=l.split('|'); return {key:'P:'+p[0], jp:p[0], kana:p[1], ans:p[2], wrong:p[3].split(','), mean:p[4], why:p[5]||''}; });
+const SENTS = lines(SENTENCE_LIST).map(l=>{ const p=l.split('|'); return {key:'S:'+p[0], chunks:p[0].split(' '), kana:p[1], mean:p[2], why:p[3]||''}; });
+const KH = {}; KANJI_HINTS.split(',').forEach(x=>{ const i=x.indexOf('='); if(i>0) KH[x.slice(0,i).trim()]=x.slice(i+1).trim(); });
+
+/* ---------- kana to romaji (automatic) ---------- */
+const ROMA = (function(){
+  const m = {};
+  const rows = {'':'あいうえお',k:'かきくけこ',s:'さしすせそ',t:'たちつてと',n:'なにぬねの',h:'はひふへほ',m:'まみむめも',r:'らりるれろ',
+                g:'がぎぐげご',z:'ざじずぜぞ',d:'だぢづでど',b:'ばびぶべぼ',p:'ぱぴぷぺぽ'};
+  const v = 'aiueo';
+  for (const c in rows) for (let i=0;i<5;i++) m[rows[c][i]] = c+v[i];
+  Object.assign(m,{し:'shi',ち:'chi',つ:'tsu',ふ:'fu',じ:'ji',ぢ:'ji',づ:'zu',や:'ya',ゆ:'yu',よ:'yo',わ:'wa',を:'o',ん:'n',ゔ:'vu',
+                   ぁ:'a',ぃ:'i',ぅ:'u',ぇ:'e',ぉ:'o'});
+  const y = {き:'ky',し:'sh',ち:'ch',に:'ny',ひ:'hy',み:'my',り:'ry',ぎ:'gy',じ:'j',び:'by',ぴ:'py'};
+  const s = {ゃ:'a',ゅ:'u',ょ:'o'};
+  for (const a in y) for (const b in s) m[a+b] = y[a]+s[b];
+  Object.assign(m,{てぃ:'ti',でぃ:'di',ふぁ:'fa',ふぃ:'fi',ふぇ:'fe',ふぉ:'fo',うぃ:'wi',うぇ:'we',ちぇ:'che',しぇ:'she',じぇ:'je',でゅ:'dyu'});
+  return m;
+})();
+function toHira(s){ let o=''; for (const ch of s){ const c=ch.charCodeAt(0); o += (c>=0x30A1&&c<=0x30F6)?String.fromCharCode(c-0x60):ch; } return o; }
+function romajiWord(word){
+  const h = toHira(word); let out='', gem=false;
+  for (let i=0;i<h.length;i++){
+    const c=h[i];
+    if (c==='っ'){ gem=true; continue; }
+    if (c==='ー'){ const mm=out.match(/[aiueo](?=[^aiueo]*$)/); if(mm) out+=mm[0]; continue; }
+    let r = ROMA[h.substr(i,2)]; if (r) i++; else r = ROMA[c];
+    if (r===undefined){ out+=c; gem=false; continue; }
+    if (gem){ out += (r[0]==='c'?'t':r[0]); gem=false; }
+    out += r;
+  }
+  return out;
+}
+function romaji(kana){
+  return kana.split(' ').map(t=>{
+    if (t==='は') return 'wa'; if (t==='へ') return 'e'; if (t==='＿') return '__';
+    return romajiWord(t);
+  }).join(' ').replace(/konnichiha/g,'konnichiwa').replace(/konbanha/g,'konbanwa').replace(/、/g,',').replace(/。/g,'.');
+}
+
+/* ---------- small helpers ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const J = s => '<span lang="ja">'+esc(s)+'</span>';
+const rnd = n => Math.floor(Math.random()*n);
+const pick = a => a[rnd(a.length)];
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=rnd(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function weighted(items, wf){ let t=0; const ws=items.map(x=>{const w=wf(x); t+=w; return w;}); let r=Math.random()*t; for(let i=0;i<items.length;i++){ r-=ws[i]; if(r<=0) return items[i]; } return items[items.length-1]; }
+const base = m => m.replace(/\(.*?\)/g,'').trim().toLowerCase();
+const sizeClass = s => s.length<=4?'s1':s.length<=8?'s2':s.length<=14?'s3':'s4';
+
+/* ---------- saving on the device ---------- */
+const SAVE_KEY = 'tabi-quest-save-v1';
+let save = {yen:0, runs:0, wins:0, bestFloor:0, bestStreak:0, miss:{}, shop:{}, boss:{}, set:{romaji:false, sound:true, listen:true}};
+function loadSave(){ try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)); if(s){ save=Object.assign(save,s); save.set=Object.assign({romaji:false,sound:true,listen:true},s.set||{}); save.miss=s.miss||{}; save.shop=s.shop||{}; save.boss=s.boss||{}; } }catch(e){} }
+function writeSave(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+
+/* ---------- voice ---------- */
+let jaVoice=null, voicesKnown=false;
+function loadVoices(){ try{ const vs=speechSynthesis.getVoices(); if(vs.length){ voicesKnown=true; jaVoice=vs.find(v=>/^ja/i.test(v.lang))||null; } }catch(e){} }
+function canSpeak(){ return typeof speechSynthesis!=='undefined' && !(voicesKnown && !jaVoice); }
+function listenOK(){ return save.set.sound && save.set.listen && canSpeak(); }
+let lastUtter=null, speakTimer=null;
+function speak(text, force){
+  if ((!save.set.sound && !force) || !canSpeak() || !text) return;
+  const go = ()=>{
+    try{
+      const u=new SpeechSynthesisUtterance(text); u.lang='ja-JP'; if(jaVoice) u.voice=jaVoice; u.rate=0.9;
+      lastUtter=u;                       // keep a reference, or some browsers cut the sound off
+      speechSynthesis.resume(); speechSynthesis.speak(u);
+    }catch(e){}
+  };
+  try{
+    clearTimeout(speakTimer);
+    // stopping and speaking in the same instant fails silently in some browsers, so leave a short gap
+    if (speechSynthesis.speaking || speechSynthesis.pending){ speechSynthesis.cancel(); speakTimer=setTimeout(go,90); }
+    else go();
+  }catch(e){}
+}
+/* iPhone only lets a page talk after a tap. This silent sound, made during a tap, unlocks the voice. */
+function unlockVoice(){
+  try{ loadVoices(); const u=new SpeechSynthesisUtterance('あ'); u.lang='ja-JP'; u.volume=0; if(jaVoice) u.voice=jaVoice; lastUtter=u; speechSynthesis.speak(u); }catch(e){}
+}
+function voiceStatus(){
+  if (typeof speechSynthesis==='undefined') return 'This browser cannot speak. Listening questions are off.';
+  if (jaVoice) return 'Japanese voice found: '+jaVoice.name+'.';
+  if (voicesKnown) return 'No Japanese voice is installed on this device. Sound and listening questions are off here.';
+  return 'Voice not checked yet. Tap “Test the voice.”';
+}
+const sayOf = w => w.phrase ? w.jp : w.kana;
+
+/* ---------- building questions ---------- */
+function distractors(w, n, mode){
+  // mode: 'mean' | 'jp' | 'kana'
+  const val = x => mode==='mean' ? x.mean : mode==='jp' ? x.jp : x.kana;
+  const kset = [...w.jp].filter(c=>KANJI.test(c));
+  let c = WORDS.filter(x => x!==w && base(x.mean)!==base(w.mean) && x.kana!==w.kana && x.jp!==w.jp);
+  if (mode==='kana') c = c.filter(x => x.hasKanji && !x.phrase);
+  c = c.map(x=>{
+    let s = Math.random()*3;
+    if (x.phrase===w.phrase) s += 4;
+    if (x.place===w.place) s += 1;
+    if (kset.some(k=>x.jp.indexOf(k)>=0)) s += 2.5;
+    if (mode==='kana' && Math.abs(x.kana.length-w.kana.length)<=1) s += 1.5;
+    if (mode==='kana' && x.jp.length===w.jp.length) s += 2;
+    return [s,x];
+  }).sort((a,b)=>b[0]-a[0]);
+  const out=[], seen=new Set([mode==='mean'?base(w.mean):val(w)]);
+  for (const [,x] of c){ const k = mode==='mean'?base(x.mean):val(x); if(seen.has(k)) continue; seen.add(k); out.push(x); if(out.length===n) break; }
+  return out;
+}
+const LOOK = ['シツ','ソン','クケ','ウワ','コユ','スヌ','チテ','ナメ','アマ','ルレ','ロコ','タク','フラ','さち','きさ','ぬめ','はほ','わね','ねれ','るろ','あお','いり','こに','たな','けは','まも','めの','つう'];
+function kanaFakes(w){
+  const right = romaji(w.kana), out = {}, chars=[...w.kana];
+  const size = ()=>Object.keys(out).length;
+  const idx = shuffle(chars.map((_,i)=>i));
+  for (const i of idx){
+    for (const pr of shuffle(LOOK)){
+      const p = pr.indexOf(chars[i]); if (p<0) continue;
+      const other = pr[1-p], c2 = chars.slice(); c2[i] = other;
+      const r = romaji(c2.join(''));
+      if (r!==right && !out[r]) out[r] = 'Look-alike kana: '+chars[i]+' is "'+romaji(chars[i])+'". '+other+' is "'+romaji(other)+'".';
+    }
+    if (size()>=3) break;
+  }
+  // not enough look-alikes: change one vowel sound instead
+  let guard = 0;
+  while (size()<3 && guard++<60){
+    const pos = []; for (let i=0;i<right.length;i++) if ('aiueo'.indexOf(right[i])>=0) pos.push(i);
+    if (!pos.length) break;
+    const i = pick(pos), v = pick('aiueo'.replace(right[i],'').split(''));
+    const r = right.slice(0,i)+v+right.slice(i+1);
+    if (!out[r]) out[r] = '';
+  }
+  return shuffle(Object.keys(out)).slice(0,3).map(r=>({r:r, note:out[r]}));
+}
+function romLine(kana){ return save.set.romaji ? '<small>'+esc(romaji(kana))+'</small>' : ''; }
+
+function makeWordQ(w, avoid){
+  const short = !w.phrase && w.kana.length<=9;
+  let types = [['meaning', w.sign?4:3], ['reverse',2]];
+  if (w.hasKanji && short) types.push(['reading',3]);
+  if (!w.hasKanji && short && w.kana.length>=2) types.push(['kana',1.5]);
+  if (listenOK()) types.push(['listen',2]);
+  if (avoid && avoid.length){ const f=types.filter(t=>avoid.indexOf(t[0])<0); if(f.length) types=f; }
+  const type = weighted(types, t=>t[1])[0];
+  const q = {type, item:w, isWord:true, limit:CFG.timeChoice, fast:CFG.fastChoice,
+             card:{jp:w.jp, kana:w.kana, mean:w.mean}, say:sayOf(w)};
+  let opts;
+  if (type==='meaning'){
+    q.ask = w.sign ? 'You see this sign. What does it mean?' : 'What does this mean?';
+    q.main = '<div class="main '+sizeClass(w.jp)+'">'+J(w.jp)+'</div>' + (save.set.romaji?'<div class="rom">'+esc(romaji(w.kana))+'</div>':'');
+    opts = [{h:esc(w.mean),ok:true}].concat(distractors(w,3,'mean').map(x=>({h:esc(x.mean), src:x})));
+  } else if (type==='reverse'){
+    q.ask = 'Which one is this in Japanese?';
+    q.main = '<div class="main en">'+esc(w.mean)+'</div>';
+    opts = [{h:J(w.jp)+romLine(w.kana),ok:true}].concat(distractors(w,3,'jp').map(x=>({h:J(x.jp)+romLine(x.kana), src:x})));
+  } else if (type==='reading'){
+    q.ask = 'How do you read this?';
+    q.main = '<div class="main '+sizeClass(w.jp)+'">'+J(w.jp)+'</div>';
+    opts = [{h:J(w.kana)+romLine(w.kana),ok:true}].concat(distractors(w,3,'kana').map(x=>({h:J(x.kana)+romLine(x.kana), src:x})));
+  } else if (type==='kana'){
+    q.ask = 'Read the kana. Which sound is it?';
+    q.main = '<div class="main '+sizeClass(w.jp)+'">'+J(w.jp)+'</div>';
+    opts = [{h:esc(romaji(w.kana)),ok:true}].concat(kanaFakes(w).map(f=>({h:esc(f.r), note:f.note})));
+  } else {
+    q.ask = 'Listen. What does it mean?';
+    q.limit = CFG.timeListen; q.autoSay = true;
+    q.main = '<button class="hear" id="hearBtn" aria-label="Play the sound again">🔊</button><div class="rom">Tap to hear it again</div>';
+    opts = [{h:esc(w.mean),ok:true}].concat(distractors(w,3,'mean').map(x=>({h:esc(x.mean), src:x})));
+  }
+  q.opts = shuffle(opts);
+  return q;
+}
+function makePartQ(p){
+  const filled = p.jp.replace('＿', p.ans);
+  const q = {type:'particle', item:p, limit:CFG.timeChoice, fast:CFG.fastChoice,
+             card:{jp:filled, kana:p.kana.replace('＿',p.ans), mean:p.mean}, say:filled};
+  q.ask = 'Pick the particle for the gap: “'+p.mean+'”';
+  const shown = p.jp.replace('＿','〔　〕');
+  q.main = '<div class="main '+sizeClass(shown)+'">'+J(shown)+'</div>' + (save.set.romaji?'<div class="rom">'+esc(romaji(p.kana))+'</div>':'');
+  q.opts = shuffle([{h:J(p.ans)+romLine(p.ans),ok:true}].concat(p.wrong.map(x=>({h:J(x)+romLine(x), p:x}))));
+  return q;
+}
+function makeOrderQ(s){
+  const q = {type:'order', item:s, limit:CFG.timeOrder, fast:CFG.fastOrder,
+             card:{jp:s.chunks.join(''), kana:s.kana, mean:s.mean}, say:s.chunks.join('')};
+  q.ask = 'Put the pieces in order to say:';
+  q.main = '<div class="main en">'+esc(s.mean)+'</div>';
+  let t = shuffle(s.chunks), guard=0;
+  while (t.join('|')===s.chunks.join('|') && guard++<10) t = shuffle(s.chunks);
+  q.tiles = t; q.placed = [];
+  return q;
+}
+
+/* =====================================================================
+   BOSSES: real conversations
+   ---------------------------------------------------------------------
+   Each floor ends with one conversation from that place's pool.
+   The details inside (items, prices, counts, problems) are random.
+   Every Japanese line is written as  X(Japanese, reading, English).
+   Step kinds:
+     sMean   - they say something, you pick what it means
+     sDetail - they say a number or detail, you catch it
+     sReply  - you pick the right thing to say
+     sBuild  - you build your reply from pieces
+   ===================================================================== */
+const X = (jp,kana,en)=>({jp:jp,kana:kana,en:en});
+const sMean   = (npc,wrong,why)=>({t:'mean',npc:npc,wrong:wrong||[],why:why||''});
+const sDetail = (npc,ask,right,wrong,why)=>({t:'detail',npc:npc,ask:ask,right:right,wrong:wrong,why:why||''});
+const sReply  = (goal,right,wrong,why,npc)=>({t:'reply',goal:goal,right:right,wrong:wrong||[],why:why||'',npc:npc||null});
+const sBuild  = (goal,chunks,kana,why,npc)=>({t:'build',goal:goal,chunks:chunks.split(' '),kana:kana,why:why||'',npc:npc||null});
+const coin = ()=>Math.random()<0.5;
+const cap = s=>s.charAt(0).toUpperCase()+s.slice(1);
+const others = (list,x,n)=>shuffle(list.filter(y=>y!==x)).slice(0,n||3);
+
+/* ---------- numbers ---------- */
+function numKana(n){
+  const d=['','いち','に','さん','よん','ご','ろく','なな','はち','きゅう'];
+  const man=Math.floor(n/10000), sen=Math.floor(n%10000/1000), hya=Math.floor(n%1000/100), ju=Math.floor(n%100/10), one=n%10;
+  let s='';
+  if (man) s+=d[man]+'まん';
+  if (sen) s+= sen===1?'せん':sen===3?'さんぜん':sen===8?'はっせん':d[sen]+'せん';
+  if (hya) s+= hya===1?'ひゃく':hya===3?'さんびゃく':hya===6?'ろっぴゃく':hya===8?'はっぴゃく':d[hya]+'ひゃく';
+  if (ju)  s+= ju===1?'じゅう':d[ju]+'じゅう';
+  if (one) s+=d[one];
+  return s;
+}
+const NUM   = ['zero','one','two','three','four'];
+const KN    = ['','一','二','三','四','五','六','七','八','九','十','十一','十二'];
+const HOURK = {1:'いちじ',2:'にじ',3:'さんじ',4:'よじ',5:'ごじ',6:'ろくじ',7:'しちじ',8:'はちじ',9:'くじ',10:'じゅうじ',11:'じゅういちじ',12:'じゅうにじ'};
+const MINK  = {5:'ごふん',10:'じゅっぷん',15:'じゅうごふん',20:'にじゅっぷん',30:'さんじゅっぷん',40:'よんじゅっぷん',45:'よんじゅうごふん'};
+const FLK   = {2:'にかい',3:'さんがい',4:'よんかい',5:'ごかい',6:'ろっかい',7:'ななかい',8:'はっかい',9:'きゅうかい'};
+const NIGHT = [null,X('一泊','いっぱく','1 night'),X('二泊','にはく','2 nights'),X('三泊','さんぱく','3 nights'),X('四泊','よんはく','4 nights')];
+const PEOPLE= [null,X('一人','ひとり','one person'),X('二人','ふたり','two people'),X('三人','さんにん','three people'),X('四人','よにん','four people')];
+const THINGS= [null,X('一つ','ひとつ','one'),X('二つ','ふたつ','two'),X('三つ','みっつ','three')];
+const MAI   = [null,X('一枚','いちまい','one'),X('二枚','にまい','two'),X('三枚','さんまい','three'),X('四枚','よんまい','four')];
+const CITIES= [X('京都','きょうと','Kyoto'),X('大阪','おおさか','Osaka'),X('奈良','なら','Nara'),X('広島','ひろしま','Hiroshima'),X('名古屋','なごや','Nagoya'),X('金沢','かなざわ','Kanazawa'),X('東京','とうきょう','Tokyo')];
+const COLORS= [X('黒','くろ','black'),X('青','あお','blue'),X('赤','あか','red'),X('白','しろ','white')];
+const YES = X('はい、お願いします','はい、おねがいします','Yes, please.');
+const NO  = X('いいえ、大丈夫です','いいえ、だいじょうぶ です','No, thank you.');
+const THANKS = ()=>sReply('Say you understand, and thank them.',
+  X('わかりました。ありがとうございます','わかりました。 ありがとう ございます','I understand. Thank you.'),
+  [X('わかりません。すみません','わかりません。 すみません',"I don't understand. Sorry.")],
+  'わかりました = I understood. わかりません = I do not understand.');
+const tix = n => NUM[n]+' adult ticket'+(n>1?'s':'');
+
+const NUMWHY = '百 ひゃく = 100. 千 せん = 1,000. 万 まん = 10,000. Watch the sound changes: 300 さんびゃく, 600 ろっぴゃく, 800 はっぴゃく, 3,000 さんぜん, 8,000 はっせん.';
+const yenFmt = n => '¥'+n.toLocaleString('en-US');
+const P_SMALL = [280,350,430,480,560,640,720,860,980,1080,1250,1430];
+const P_MID   = [880,980,1200,1350,1580,1800,2400,2750,3300,3600,4200,5800,6400];
+const P_BIG   = [4960,5810,8910,11300,13620,14170];
+const P_TEMPLE= [400,500,600,800,1000,1200,1500,2000];
+function dPrice(list, pj, pk, pe){
+  const amt = pick(list);
+  const c = [...new Set([amt+100, amt-100, amt+300, amt+1000, amt-1000, amt+60, amt<2000?amt*10:amt-300])].filter(v=>v>0 && v!==amt);
+  return sDetail(X((pj||'')+amt+'円です', (pk?pk+' ':'')+numKana(amt)+'えん です', (pe||'It is ')+amt.toLocaleString('en-US')+' yen.'),
+                 'How much is it?', yenFmt(amt), shuffle(c).slice(0,3).map(yenFmt), NUMWHY);
+}
+function dNum(vals, line, ask, fmt, why){
+  const n = pick(vals);
+  return sDetail(line(n), ask, fmt(n), others(vals,n,3).map(fmt), why||'');
+}
+const TIMEWHY = 'Clock hours: 4時 よじ, 7時 しちじ, 9時 くじ. 半 (はん) = half past.';
+function dTime(hours, line, ask){
+  const all=[]; hours.forEach(h=>{ all.push([h,false]); all.push([h,true]); });
+  const r = pick(all), lab = t=>t[0]+(t[1]?':30':':00');
+  return sDetail(line(r[0]+'時'+(r[1]?'半':''), HOURK[r[0]]+(r[1]?'はん':''), lab(r)), ask, lab(r), others(all,r,3).map(lab), TIMEWHY);
+}
+const dTrack = ()=>dNum([1,2,3,4,5,6,7,8,9,10,11,12], n=>X(n+'番線です', numKana(n)+'ばんせん です', 'It is track '+n+'.'), 'Which track?', n=>'Track '+n, '番線 (ばんせん) = track number. 4 よん, 7 なな, 9 きゅう.');
+const dMin = (line, ask)=>dNum([5,10,15,20,30,40,45], line, ask, n=>n+' minutes', '分 = minutes. It is read ふん or ぷん: 5分 ごふん, 10分 じゅっぷん, 30分 さんじゅっぷん.');
+const dFloor = (line, ask)=>dNum([2,3,4,5,6,7,8,9], line, ask||'Which floor?', n=>'Floor '+n, '階 (かい) = floor. 3階 さんがい, 6階 ろっかい, 8階 はっかい.');
+
+/* Filler choices, used when a step does not list three wrong answers. */
+const REPLY_POOL = [
+  YES, NO,
+  X('わかりません','わかりません',"I don't understand."),
+  X('もう一度お願いします','もういちど おねがいします','Once more, please.'),
+  X('トイレはどこですか','トイレ は どこ です か','Where is the toilet?'),
+  X('これをください','これ を ください','This one, please.'),
+  X('いくらですか','いくら です か','How much is it?'),
+  X('予約しています','よやく して います','I have a reservation.'),
+  X('お会計をお願いします','おかいけい を おねがいします','The check, please.'),
+  X('英語を話せますか','えいご を はなせます か','Can you speak English?'),
+  X('写真を撮ってもいいですか','しゃしん を とって も いい です か','May I take a photo?'),
+  X('持ち帰りでお願いします','もちかえり で おねがいします','To go, please.'),
+  X('ここで食べます','ここ で たべます','I will eat here.'),
+  X('鍵をなくしました','かぎ を なくしました','I lost my key.'),
+  X('駅はどこですか','えき は どこ です か','Where is the station?'),
+  X('二人です','ふたり です','There are two of us.'),
+  X('ありがとうございます','ありがとう ございます','Thank you.'),
+  X('ごめんなさい','ごめんなさい','I am sorry.'),
+  X('日本語が少しわかります','にほんご が すこし わかります','I understand a little Japanese.'),
+  X('袋をください','ふくろ を ください','A bag, please.'),
+  X('おすすめは何ですか','おすすめ は なん です か','What do you recommend?'),
+  X('ゆっくりお願いします','ゆっくり おねがいします','Slowly, please.')
+];
+const MEAN_POOL = ['Is this for here or to go?','Do you need a bag?','How many people?','Shall I heat it up?','Cash or card?',
+  'Do you have a reservation?','Please wait a moment.','Your passport, please.','Smoking or non-smoking?','What would you like to drink?',
+  'We are sold out of that.','Last order is at ten.','Please sign here.','It is on the second floor.','Would you like chopsticks?',
+  'Please take off your shoes.','Which size would you like?','Is that everything?','Please line up here.','We are closed today.',
+  'Please pay at the register.','Please show me your ticket.','It is free of charge.','Please come again.'];
+
+/* ---------- the conversation pool ---------- */
+const BOSSES = {
+airport: [
+ {id:'a_imm', icon:'🛂', title:'Immigration desk', who:'Officer', make(){
+    const durs=[X('二週間です','にしゅうかん です','Two weeks.'),X('十日間です','とおかかん です','Ten days.'),X('一週間です','いっしゅうかん です','One week.'),X('五日間です','いつかかん です','Five days.')];
+    const dur=pick(durs), city=pick(CITIES);
+    const s=[
+      sMean(X('パスポートをお願いします','パスポート を おねがいします','Your passport, please.'),['Your boarding pass, please.','Is this your passport?'],'お願いします = please, when asking for something.'),
+      sMean(X('旅行の目的は何ですか','りょこう の もくてき は なん です か','What is the purpose of your trip?'),['How long is your trip?','Where will you stay?'],'旅行 = trip. 目的 (もくてき) = purpose.'),
+      sReply('Say you are here for sightseeing.',X('観光です','かんこう です','It is sightseeing.'),[X('仕事です','しごと です','It is work.'),X('留学です','りゅうがく です','It is study abroad.')],'観光 (かんこう) = sightseeing. 仕事 = work. 留学 = study abroad.'),
+      sMean(X('どのくらい滞在しますか','どのくらい たいざい します か','How long will you stay?'),['Where will you stay?','What is the purpose of your trip?'],'どのくらい = how long. 滞在 (たいざい) = stay.'),
+      sReply('Say how long: '+dur.en.toLowerCase(),dur,others(durs,dur,3),'週間 (しゅうかん) = weeks. 日間 (かかん / にちかん) = days. 十日 is read とおか. 五日 is read いつか.'),
+      sMean(X('どこに泊まりますか','どこ に とまります か','Where will you stay?'),['How long will you stay?','Where did you come from?'],'泊まります (とまります) = stay overnight.'),
+      sBuild('I will stay at a hotel in '+city.en+'.',city.jp+' の ホテル に 泊まります',city.kana+' の ホテル に とまります','[place] の ホテル is one block. に marks where you stay. The verb goes last.')
+    ];
+    if (coin()) s.push(
+      sMean(X('申告するものはありますか','しんこく する もの は あります か','Do you have anything to declare?'),['Do you have any luggage?','Is this your first time in Japan?'],'申告 (しんこく) = declare. もの = things.'),
+      sReply('Say: no, I do not.',X('いいえ、ありません','いいえ、ありません','No, I do not.'),[X('はい、あります','はい、あります','Yes, I do.')],'ありません = there is not / I do not have.'));
+    return {goal:'Get through immigration', steps:s};
+ }},
+ {id:'a_bag', icon:'🧳', title:'Lost luggage counter', who:'Staff', make(){
+    const looks=[X('黒くて大きいスーツケースです','くろくて おおきい スーツケース です','It is a big black suitcase.'),X('青くて小さいスーツケースです','あおくて ちいさい スーツケース です','It is a small blue suitcase.'),
+                 X('赤くて大きいスーツケースです','あかくて おおきい スーツケース です','It is a big red suitcase.'),X('白くて小さいスーツケースです','しろくて ちいさい スーツケース です','It is a small white suitcase.')];
+    const look=pick(looks);
+    return {goal:'Report your missing suitcase', steps:[
+      sBuild('Excuse me, my luggage has not come out.','すみません 荷物 が 出てきません','すみません にもつ が でてきません','が marks the luggage as the subject. 出てきません = has not come out.'),
+      sMean(X('便名を教えてください','びんめい を おしえて ください','Please tell me your flight number.'),['Please show me your passport.','Please write your name.'],'便名 (びんめい) = flight number. 教えてください = please tell me.'),
+      sMean(X('どんなかばんですか','どんな かばん です か','What kind of bag is it?'),['Whose bag is it?','Where is the bag?'],'どんな = what kind of.'),
+      sReply('Describe it: '+look.en,look,others(looks,look,3),'黒 black · 青 blue · 赤 red · 白 white. 大きい big · 小さい small.'),
+      sMean(X('見つかったらホテルに届けます','みつかったら ホテル に とどけます','When we find it, we will deliver it to your hotel.'),['Please come back to the airport tomorrow.','We found it at your hotel.'],'見つかったら = when it is found. 届けます (とどけます) = deliver.'),
+      dTime([8,9,10,11],(j,k,l)=>X('明日の午前'+j+'ごろです','あした の ごぜん '+k+' ごろ です','Around '+l+' tomorrow morning.'),'When will it arrive tomorrow morning?'),
+      sReply('Thank them. Say it is a big help.',X('ありがとうございます。助かります','ありがとう ございます。 たすかります','Thank you. That is a big help.'),[X('すみません、わかりません','すみません、 わかりません','Sorry, I do not understand.')],'助かります (たすかります) = that helps me.')
+    ]};
+ }},
+ {id:'a_bus', icon:'🚌', title:'Airport bus counter', who:'Staff', make(){
+    const dest=pick([X('新宿','しんじゅく','Shinjuku'),X('東京駅','とうきょうえき','Tokyo Station'),X('渋谷','しぶや','Shibuya'),X('横浜','よこはま','Yokohama')]);
+    const n=1+rnd(3), ow=coin();
+    const one=X('片道でお願いします','かたみち で おねがいします','One way, please.'), rt=X('往復でお願いします','おうふく で おねがいします','Round trip, please.');
+    return {goal:'Buy bus tickets into the city', steps:[
+      sBuild(cap(tix(n))+' to '+dest.en+', please.',dest.jp+' まで 大人 '+MAI[n].jp+' ください',dest.kana+' まで おとな '+MAI[n].kana+' ください','The destination and まで come first. Then 大人 (adult), the count, and ください.'),
+      sMean(X('片道ですか、往復ですか','かたみち です か、 おうふく です か','One way or round trip?'),['Window or aisle?','Cash or card?'],'片道 = one way. 往復 = round trip.'),
+      sReply('Say: '+(ow?'one way':'round trip')+', please.',ow?one:rt,[ow?rt:one],'片道 (かたみち) = one way. 往復 (おうふく) = round trip.'),
+      dPrice(P_MID),
+      sReply('Ask if you can pay by card.',X('カードで払えますか','カード で はらえます か','Can I pay by card?'),[X('現金で払えますか','げんきん で はらえます か','Can I pay in cash?'),X('カードはどこですか','カード は どこ です か','Where is the card?')],'で marks the method. 払えます = can pay.'),
+      coin() ? sMean(X('はい、使えます','はい、つかえます','Yes, you can use it.'),['Sorry, it is cash only.','Yes, it is free.'],'使えます (つかえます) = can use.')
+             : sMean(X('すみません、現金だけです','すみません、げんきん だけ です','Sorry, it is cash only.'),['Yes, you can use it.','Sorry, we are sold out.'],'現金 = cash. だけ = only.'),
+      dNum([1,2,3,5,6,7,8,9,11,12],n2=>X('乗り場は'+n2+'番です','のりば は '+numKana(n2)+'ばん です','The boarding area is number '+n2+'.'),'Which bus stop number?',n2=>'Number '+n2,'乗り場 = boarding area. 番 (ばん) = number.')
+    ]};
+ }},
+ {id:'a_checkin', icon:'🛫', title:'Airline check-in', who:'Agent', make(){
+    const nb=1+rnd(2), win=coin();
+    const w=X('窓側をお願いします','まどがわ を おねがいします','Window side, please.'), a=X('通路側をお願いします','つうろがわ を おねがいします','Aisle side, please.');
+    return {goal:'Check in for your flight', steps:[
+      sMean(X('パスポートと航空券をお願いします','パスポート と こうくうけん を おねがいします','Your passport and ticket, please.'),['Your passport and luggage, please.','Is this your ticket?'],'航空券 (こうくうけん) = plane ticket.'),
+      sMean(X('お預けの荷物はありますか','おあずけ の にもつ は あります か','Do you have any bags to check?'),['Is this your bag?','Did you pack your bags yourself?'],'預ける (あずける) = to hand over, to check in.'),
+      sReply('Say you have '+NUM[nb]+'.',X('はい、'+THINGS[nb].jp+'あります','はい、'+THINGS[nb].kana+' あります','Yes, I have '+NUM[nb]+'.'),[X('はい、'+THINGS[3-nb].jp+'あります','はい、'+THINGS[3-nb].kana+' あります','Yes, I have '+NUM[3-nb]+'.'),X('いいえ、ありません','いいえ、ありません','No, I do not.')],'一つ ひとつ = one. 二つ ふたつ = two.'),
+      sMean(X('窓側と通路側、どちらがいいですか','まどがわ と つうろがわ、 どちら が いい です か','Window or aisle, which do you prefer?'),['One way or round trip?','Smoking or non-smoking?'],'窓 = window. 通路 = aisle. 側 = side.'),
+      sReply('Ask for '+(win?'a window':'an aisle')+' seat.',win?w:a,[win?a:w],'窓側 (まどがわ) = window side. 通路側 (つうろがわ) = aisle side.'),
+      dNum([12,14,17,21,24,27,31,38],n=>X('搭乗口は'+n+'番です','とうじょうぐち は '+numKana(n)+'ばん です','The boarding gate is number '+n+'.'),'Which gate?',n=>'Gate '+n,'搭乗口 (とうじょうぐち) = boarding gate.'),
+      dTime([1,2,3,4,5,6,7,8,9],(j,k,l)=>X('搭乗時間は'+j+'です','とうじょう じかん は '+k+' です','Boarding time is '+l+'.'),'When is boarding?')
+    ]};
+ }}
+],
+station: [
+ {id:'s_ticket', icon:'🎫', title:'Shinkansen ticket office', who:'Clerk', make(){
+    const city=pick(CITIES), n=1+rnd(2), res=coin();
+    const r=X('指定席をお願いします','していせき を おねがいします','A reserved seat, please.'), f=X('自由席をお願いします','じゆうせき を おねがいします','A non-reserved seat, please.');
+    const s=[
+      sBuild(cap(tix(n))+' to '+city.en+', please.',city.jp+' まで 大人 '+MAI[n].jp+' ください',city.kana+' まで おとな '+MAI[n].kana+' ください','The destination and まで come first. Then 大人 (adult), the count, and ください.'),
+      sMean(X('指定席ですか、自由席ですか','していせき です か、 じゆうせき です か','Reserved or non-reserved seat?'),['One way or round trip?','Window or aisle?'],'指定席 = reserved seat. 自由席 = non-reserved seat.'),
+      sReply('Ask for a '+(res?'reserved':'non-reserved')+' seat.',res?r:f,[res?f:r,X('禁煙席をお願いします','きんえんせき を おねがいします','A non-smoking seat, please.')],'指定 (してい) = assigned. 自由 (じゆう) = free.')
+    ];
+    if (coin()) s.push(
+      sMean(X('すみません、その時間は満席です','すみません、その じかん は まんせき です','Sorry, that time is fully booked.'),['Sorry, that train is delayed.','Sorry, that seat is reserved.'],'満席 (まんせき) = all seats full.'),
+      sReply('Ask if there is a later shinkansen.',X('次の新幹線はありますか','つぎ の しんかんせん は あります か','Is there a next shinkansen?'),[X('前の新幹線はありますか','まえ の しんかんせん は あります か','Is there an earlier shinkansen?'),X('次の新幹線はどこですか','つぎ の しんかんせん は どこ です か','Where is the next shinkansen?')],'次 (つぎ) = next. 前 (まえ) = before.'));
+    else s.push(
+      sMean(X('窓側でよろしいですか','まどがわ で よろしい です か','Is a window seat okay?'),['Is an aisle seat okay?','Is a reserved seat okay?'],'よろしいですか is a polite いいですか.'),
+      sReply('Say: yes, please.',YES,[NO],'はい、お願いします = yes, please.'));
+    s.push(dPrice(P_BIG), dTrack(),
+      dTime([1,2,3,4,5,7,8,9,10,11],(j,k,l)=>X('出発は'+j+'です','しゅっぱつ は '+k+' です','It departs at '+l+'.'),'When does it leave?'));
+    return {goal:'Buy shinkansen tickets', steps:s};
+ }},
+ {id:'s_ask', icon:'🚉', title:'Asking station staff', who:'Staff', make(){
+    const city=pick(CITIES);
+    const via=pick([X('品川','しながわ','Shinagawa'),X('新大阪','しんおおさか','Shin-Osaka'),X('上野','うえの','Ueno'),X('岡山','おかやま','Okayama')]);
+    return {goal:'Find the right train to '+city.en, steps:[
+      sReply('Ask: does this train go to '+city.en+'?',X('この電車は'+city.jp+'に行きますか','この でんしゃ は '+city.kana+' に いきます か','Does this train go to '+city.en+'?'),
+        [X('この電車は'+city.jp+'から来ますか','この でんしゃ は '+city.kana+' から きます か','Does this train come from '+city.en+'?'),X(city.jp+'行きの切符をください',city.kana+'ゆき の きっぷ を ください','A ticket to '+city.en+', please.')],'に marks the destination. 行きますか asks "does it go?"'),
+      sMean(X('いいえ、行きません。反対のホームです','いいえ、いきません。 はんたい の ホーム です','No, it does not. It is the opposite platform.'),['Yes, it does. It is the next stop.','No, it does not. Please take a bus.'],'反対 (はんたい) = opposite.'),
+      dTrack(),
+      sMean(X(via.jp+'で乗り換えてください',via.kana+' で のりかえて ください','Please transfer at '+via.en+'.'),['Please get off at '+via.en+'.','Please buy a ticket at '+via.en+'.'],'乗り換え (のりかえ) = transfer. 降ります = get off.'),
+      sReply('Ask how long it takes.',X('どのくらいかかりますか','どのくらい かかります か','How long does it take?'),[X('いくらかかりますか','いくら かかります か','How much does it cost?'),X('何時に着きますか','なんじ に つきます か','What time does it arrive?')],'どのくらい = how long. いくら = how much money.'),
+      dMin(m=>X(m+'分ぐらいです',MINK[m]+' ぐらい です','About '+m+' minutes.'),'How long does it take?'),
+      THANKS()
+    ]};
+ }},
+ {id:'s_lost', icon:'🎒', title:'Lost and found', who:'Staff', make(){
+    const item=pick([X('かばん','かばん','bag'),X('傘','かさ','umbrella'),X('携帯','けいたい','phone'),X('財布','さいふ','wallet')]);
+    const city=pick(CITIES), c2=pick(CITIES.filter(c=>c!==city)), col=pick(COLORS);
+    const colLine=c=>X(c.jp+'です',c.kana+' です','It is '+c.en+'.');
+    const s=[
+      sBuild('I left my '+item.en+' on the train.','電車 に '+item.jp+' を 忘れました','でんしゃ に '+item.kana+' を わすれました','に marks where you left it. を marks the thing. 忘れました = forgot, left behind.'),
+      sMean(X('どの電車ですか','どの でんしゃ です か','Which train?'),['Which station?','What time was the train?'],'どの = which.'),
+      sReply('Say: the train bound for '+city.en+'.',X(city.jp+'行きの電車です',city.kana+'ゆき の でんしゃ です','The train bound for '+city.en+'.'),
+        [X(city.jp+'から来た電車です',city.kana+' から きた でんしゃ です','The train that came from '+city.en+'.'),X(c2.jp+'行きの電車です',c2.kana+'ゆき の でんしゃ です','The train bound for '+c2.en+'.')],'行き (ゆき) after a place = bound for.'),
+      sMean(X('何色ですか','なにいろ です か','What color is it?'),['What size is it?','What is inside it?'],'色 (いろ) = color. 何色 = what color.'),
+      sReply('Say: it is '+col.en+'.',colLine(col),others(COLORS,col,3).map(colLine),'黒 くろ black · 青 あお blue · 赤 あか red · 白 しろ white.')
+    ];
+    if (coin()) s.push(
+      sMean(X('ありました。こちらですか','ありました。 こちら です か','We have it. Is this it?'),['It has not been handed in yet.','We do not have it. Please ask the police.'],'ありました = there was one, we found it.'),
+      sReply('Say: yes, that is it.',X('はい、それです','はい、それ です','Yes, that is it.'),[X('いいえ、違います','いいえ、ちがいます','No, that is wrong.')],'違います (ちがいます) = that is different, wrong.'));
+    else s.push(
+      sMean(X('まだ届いていません','まだ とどいて いません','It has not been handed in yet.'),['We have it. Is this it?','It was delivered to your hotel.'],'まだ with a negative = not yet.'),
+      sMean(X('ここに電話番号を書いてください','ここ に でんわ ばんごう を かいて ください','Please write your phone number here.'),['Please call this phone number.','Please write your address here.'],'電話番号 = phone number. 書いて = write. 住所 = address.'));
+    return {goal:'Get back the '+item.en+' you left on a train', steps:s};
+ }},
+ {id:'s_ic', icon:'💳', title:'Ticket gate trouble', who:'Station staff', make(){
+    const amts=[[1000,'千'],[2000,'二千'],[3000,'三千'],[5000,'五千']], a=pick(amts);
+    const line=x=>X(x[1]+'円チャージしてください',numKana(x[0])+'えん チャージ して ください','Please top up '+x[0].toLocaleString('en-US')+' yen.');
+    return {goal:'Fix your IC card at the gate', steps:[
+      sMean(X('残高が足りません','ざんだか が たりません','Your balance is not enough.'),['Your ticket is not valid.','This gate is closed.'],'残高 (ざんだか) = balance. 足りません = is not enough.'),
+      sReply('Ask where you can top up.',X('どこでチャージできますか','どこ で チャージ できます か','Where can I top up?'),[X('いつチャージできますか','いつ チャージ できます か','When can I top up?'),X('チャージはいくらですか','チャージ は いくら です か','How much is the top-up?')],'どこで = at what place. できますか = can I?'),
+      sMean(X('あちらの機械を使ってください','あちら の きかい を つかって ください','Please use the machine over there.'),['Please go to the window over there.','Please wait over there.'],'機械 (きかい) = machine. 使って = use.'),
+      sMean(X('現金だけです','げんきん だけ です','It is cash only.'),['It is card only.','It is free.'],'現金 = cash. だけ = only.'),
+      sReply('Ask them to top up '+a[0].toLocaleString('en-US')+' yen.',line(a),others(amts,a,3).map(line),'千 = 1,000. 二千 = 2,000. 三千 = 3,000. 五千 = 5,000.'),
+      THANKS()
+    ]};
+ }}
+],
+konbini: [
+ {id:'k_checkout', icon:'🏪', title:'Konbini checkout', who:'Clerk', make(){
+    const asks=[X('お弁当は温めますか','おべんとう は あたためます か','Shall I heat up your bento?'),X('お箸はお付けしますか','おはし は おつけ します か','Would you like chopsticks with that?'),X('スプーンはお使いになりますか','スプーン は おつかい に なります か','Will you use a spoon?')];
+    const ask=pick(asks), y1=coin(), y2=coin();
+    const pays=[X('カードでお願いします','カード で おねがいします','By card, please.'),X('現金でお願いします','げんきん で おねがいします','In cash, please.'),X('スイカでお願いします','スイカ で おねがいします','By Suica, please.')], pay=pick(pays);
+    return {goal:'Pay for your things at the register', steps:[
+      sMean(X('ポイントカードはお持ちですか','ポイントカード は おもち です か','Do you have a point card?'),['Would you like a point card?','Will you pay by card?'],'お持ちですか is a polite "do you have?"'),
+      sReply('Say: no, I do not have one.',X('いいえ、持っていません','いいえ、もって いません','No, I do not have one.'),[X('はい、持っています','はい、もって います','Yes, I have one.'),X('いいえ、いりません','いいえ、いりません','No, I do not need it.')],'持っています = have. いりません = do not need.'),
+      sMean(ask,others(asks,ask,2).map(x=>x.en),'温めます = heat up. お箸 = chopsticks. スプーン = spoon.'),
+      sReply(y1?'Say: yes, please.':'Say: no, thank you.',y1?YES:NO,[y1?NO:YES],'お願いします = please. 大丈夫です = I am fine, no thanks.'),
+      sMean(X('袋はご利用ですか','ふくろ は ごりよう です か','Would you like a bag?'),['Do you have a bag?','Is this your bag?'],'袋 = bag. ご利用 (ごりよう) = use, polite.'),
+      sReply(y2?'Say: yes, please.':'Say: no, thank you.',y2?YES:NO,[y2?NO:YES],'お願いします = please. 大丈夫です = I am fine, no thanks.'),
+      dPrice(P_SMALL,'お会計は','おかいけい は','The total is '),
+      sReply('Say how you will pay: '+pay.en.toLowerCase(),pay,others(pays,pay,2),'で marks the method. 現金 = cash.')
+    ]};
+ }},
+ {id:'k_hot', icon:'🍗', title:'Hot food counter', who:'Clerk', make(){
+    const items=shuffle([X('からあげ','からあげ','fried chicken'),X('肉まん','にくまん','pork bun'),X('コロッケ','コロッケ','croquette'),X('フランクフルト','フランクフルト','sausage on a stick')]);
+    const a=items[0], b=items[1], c=items[2], n=1+rnd(3);
+    const s=[ sBuild('Excuse me, '+NUM[n]+' '+a.en+', please.','すみません '+a.jp+' を '+THINGS[n].jp+' ください','すみません '+a.kana+' を '+THINGS[n].kana+' ください','The count goes after を and before ください.') ];
+    if (coin()) s.push(
+      sMean(X('すみません、'+a.jp+'は売り切れです','すみません、'+a.kana+' は うりきれ です','Sorry, the '+a.en+' is sold out.'),['Sorry, the '+a.en+' is not ready yet.','The '+a.en+' is half price.'],'売り切れ (うりきれ) = sold out.'),
+      sReply('Ask for the '+b.en+' instead.',X('じゃあ、'+b.jp+'をください','じゃあ、'+b.kana+' を ください','Then the '+b.en+', please.'),[X('じゃあ、'+c.jp+'をください','じゃあ、'+c.kana+' を ください','Then the '+c.en+', please.'),X('じゃあ、いりません','じゃあ、いりません','Then I do not need it.')],'じゃあ = well then.'));
+    else s.push(sMean(X('少々お待ちください','しょうしょう おまち ください','Please wait a moment.'),['Please come this way.','Please pay first.'],'少々 = a little. お待ちください = please wait.'));
+    s.push(
+      sMean(X('以上でよろしいですか','いじょう で よろしい です か','Is that everything?'),['Is this for here?','Shall I heat it up?'],'以上 (いじょう) = that is all.'),
+      sReply('Say: yes, that is all.',X('はい、以上です','はい、いじょう です','Yes, that is all.'),[X('はい、いります','はい、いります','Yes, I need it.')],'以上です = that is all.'),
+      dPrice(P_SMALL),
+      dNum([20,50,80,120,150,220,350,480],v=>X(v+'円のお返しです',numKana(v)+'えん の おかえし です','Here is '+v+' yen in change.'),'How much change do you get?',yenFmt,'お返し (おかえし) = change given back.'));
+    return {goal:'Order hot food from behind the counter', steps:s};
+ }},
+ {id:'k_find', icon:'🔦', title:'Finding things in the shop', who:'Clerk', make(){
+    const things=shuffle([X('傘','かさ','umbrellas'),X('電池','でんち','batteries'),X('充電器','じゅうでんき','phone chargers'),X('歯ブラシ','はブラシ','toothbrushes'),X('マスク','マスク','face masks')]);
+    const a=things[0], b=things[1];
+    const locs=[X('あちらの奥です','あちら の おく です','It is in the back over there.'),X('レジの横です','レジ の よこ です','It is next to the register.'),X('入口の近くです','いりぐち の ちかく です','It is near the entrance.')], loc=pick(locs);
+    return {goal:'Find what you need in the shop', steps:[
+      sReply('Ask where the '+a.en+' are.',X(a.jp+'はどこですか',a.kana+' は どこ です か','Where are the '+a.en+'?'),[X(a.jp+'はいくらですか',a.kana+' は いくら です か','How much are the '+a.en+'?'),X(a.jp+'をください',a.kana+' を ください',cap(a.en)+', please.')],'[thing] は どこですか = where is [thing]?'),
+      sMean(loc,others(locs,loc,2).map(x=>x.en),'奥 (おく) = the back. 横 (よこ) = beside. 近く (ちかく) = near.'),
+      sReply('Ask if you may use the toilet.',X('トイレを借りてもいいですか','トイレ を かりて も いい です か','May I use the toilet?'),[X('トイレはどこですか','トイレ は どこ です か','Where is the toilet?'),X('トイレはありません','トイレ は ありません','There is no toilet.')],'借りて (かりて) = borrow. [verb]てもいいですか = may I?'),
+      sMean(X('はい、どうぞ','はい、どうぞ','Yes, go ahead.'),['No, sorry.','Yes, but it costs money.'],'どうぞ = go ahead.'),
+      sReply('Ask if they have '+b.en+'.',X(b.jp+'はありますか',b.kana+' は あります か','Do you have '+b.en+'?'),[X(b.jp+'はいりますか',b.kana+' は いります か','Do you need '+b.en+'?'),X(b.jp+'はどこですか',b.kana+' は どこ です か','Where are the '+b.en+'?')],'ありますか = do you have, is there?'),
+      coin() ? sMean(X('すみません、置いていません','すみません、おいて いません','Sorry, we do not carry them.'),['Sorry, they are sold out.','Yes, they are over here.'],'置いていません = we do not stock it.')
+             : sMean(X('はい、こちらです','はい、こちら です','Yes, they are over here.'),['Sorry, we do not carry them.','Yes, they are upstairs.'],'こちら = here, this way.')
+    ]};
+ }},
+ {id:'k_tax', icon:'💊', title:'Drugstore tax-free counter', who:'Clerk', make(){
+    const pays=[X('カードでお願いします','カード で おねがいします','By card, please.'),X('現金でお願いします','げんきん で おねがいします','In cash, please.')], pay=pick(pays);
+    return {goal:'Buy your things tax-free', steps:[
+      sReply('Ask if you can buy tax-free.',X('免税できますか','めんぜい できます か','Can I get it tax-free?'),[X('割引できますか','わりびき できます か','Can I get a discount?'),X('税込ですか','ぜいこみ です か','Is tax included?')],'免税 (めんぜい) = tax exemption. 割引 = discount. 税込 = tax included.'),
+      sMean(X('パスポートを見せてください','パスポート を みせて ください','Please show me your passport.'),['Please give me your passport.','Do you have a passport?'],'見せて (みせて) = show.'),
+      sMean(X('五千円以上で免税になります','ごせんえん いじょう で めんぜい に なります','It is tax-free from 5,000 yen and up.'),['It is tax-free up to 5,000 yen.','The tax is 5,000 yen.'],'以上 (いじょう) = that amount or more. 以下 = that amount or less.'),
+      sMean(X('日本では袋を開けないでください','にほん では ふくろ を あけないで ください','Please do not open the bag while in Japan.'),['Please open the bag in Japan.','Please bring your own bag.'],'開けないで (あけないで) = do not open.'),
+      dPrice(P_MID,'お会計は','おかいけい は','The total is '),
+      sReply('Say how you will pay: '+pay.en.toLowerCase(),pay,others(pays,pay,1),'で marks the method. 現金 = cash.')
+    ]};
+ }}
+],
+restaurant: [
+ {id:'r_seat', icon:'🪑', title:'Getting a table', who:'Host', make(){
+    const n=1+rnd(4), k=rnd(3);
+    const ppl=x=>X(PEOPLE[x].jp+'です',PEOPLE[x].kana+' です',cap(PEOPLE[x].en)+'.');
+    const s=[
+      sMean(X('いらっしゃいませ。何名様ですか','いらっしゃいませ。 なんめいさま です か','Welcome. How many in your party?'),['Welcome. Do you have a reservation?','Welcome. Please wait here.'],'何名様 (なんめいさま) = how many people, polite.'),
+      sReply('Say how many: '+PEOPLE[n].en+'.',ppl(n),others([1,2,3,4],n,3).map(ppl),'People have their own counter: 一人 ひとり, 二人 ふたり, 三人 さんにん, 四人 よにん.')
+    ];
+    if (k===0) s.push(
+      dMin(m=>X('ただいま満席です。'+m+'分ほどお待ちいただけますか','ただいま まんせき です。 '+MINK[m]+' ほど おまち いただけます か','We are full right now. Can you wait about '+m+' minutes?'),'They are full. How long is the wait?'),
+      sReply('Say: yes, we will wait.',X('はい、待ちます','はい、まちます','Yes, we will wait.'),[X('いいえ、また来ます','いいえ、また きます','No, we will come again.')],'待ちます (まちます) = wait. また来ます = will come again.'));
+    else if (k===1) s.push(
+      sMean(X('カウンター席でもよろしいですか','カウンターせき でも よろしい です か','Are counter seats okay?'),['Are table seats okay?','Is the smoking section okay?'],'カウンター席 = counter seat. でも = even that is okay?'),
+      sReply('Say: yes, that is fine.',X('はい、大丈夫です','はい、だいじょうぶ です','Yes, that is fine.'),[X('いいえ、テーブル席がいいです','いいえ、テーブルせき が いい です','No, I would like a table.')],'大丈夫です = that is fine.'));
+    else s.push(
+      sMean(X('ご予約はされていますか','ごよやく は されて います か','Do you have a reservation?'),['Would you like to make a reservation?','How many in your party?'],'予約 = reservation. されていますか is a polite "have you done?"'),
+      sReply('Say: no, we do not.',X('いいえ、していません','いいえ、して いません','No, we have not.'),[X('はい、しています','はい、して います','Yes, we have.')],'していません = have not done.'));
+    s.push(
+      sMean(X('こちらへどうぞ','こちら へ どうぞ','This way, please.'),['Please wait here.','Please sit anywhere.'],'こちらへ = this way. どうぞ = please go ahead.'),
+      sReply('Ask for an English menu.',X('英語のメニューはありますか','えいご の メニュー は あります か','Do you have an English menu?'),[X('英語を話せますか','えいご を はなせます か','Can you speak English?'),X('メニューをください','メニュー を ください','A menu, please.')],'英語 の メニュー = English menu.'),
+      coin() ? sMean(X('はい、こちらです','はい、こちら です','Yes, here it is.'),['Sorry, Japanese only.','Yes, it is on the wall.'],'こちら = this one, here.')
+             : sMean(X('すみません、日本語だけです','すみません、にほんご だけ です','Sorry, Japanese only.'),['Yes, here it is.','Sorry, we are closed.'],'だけ = only.'));
+    return {goal:'Get seated at a restaurant', steps:s};
+ }},
+ {id:'r_order', icon:'🍜', title:'Ordering food', who:'Server', make(){
+    const foods=shuffle([X('ラーメン','ラーメン','ramen'),X('カレー','カレー','curry'),X('とんかつ定食','とんかつていしょく','pork cutlet set'),X('天ぷらうどん','てんぷらうどん','tempura udon'),X('焼き鳥','やきとり','chicken skewers'),X('餃子','ぎょうざ','gyoza')]);
+    const drinks=shuffle([X('ビール','ビール','beer'),X('お水','おみず','water'),X('お茶','おちゃ','tea'),X('コーラ','コーラ','cola'),X('ハイボール','ハイボール','highball')]);
+    const f=foods[0], f2=foods[1], d=drinks[0], d2=drinks[1], n=1+rnd(3), m=1+rnd(3), m2=m===1?2:m-1, k=rnd(3);
+    const dl=(dr,c)=>X(dr.jp+'を'+THINGS[c].jp+'ください',dr.kana+' を '+THINGS[c].kana+' ください',cap(NUM[c])+' '+dr.en+', please.');
+    const s=[
+      sMean(X('ご注文はお決まりですか','ごちゅうもん は おきまり です か','Have you decided on your order?'),['Is your order correct?','Would you like to order more?'],'ご注文 = order. お決まり = decided.'),
+      sBuild(cap(NUM[n])+' '+f.en+', please.',f.jp+' を '+THINGS[n].jp+' お願いします',f.kana+' を '+THINGS[n].kana+' おねがいします','[food] を [count] お願いします. The count comes after を.'),
+      sMean(X('お飲み物はいかがですか','おのみもの は いかが です か','Would you like something to drink?'),['Would you like dessert?','How is the food?'],'お飲み物 = drinks. いかがですか = how about?'),
+      sReply('Order '+NUM[m]+' '+d.en+'.',dl(d,m),[dl(d2,m),dl(d,m2)],'一つ ひとつ = one. 二つ ふたつ = two. 三つ みっつ = three.')
+    ];
+    if (k===0) s.push(
+      sMean(X('すみません、'+f.jp+'は売り切れです','すみません、'+f.kana+' は うりきれ です','Sorry, the '+f.en+' is sold out.'),['Sorry, the '+f.en+' will take a while.','The '+f.en+' is our recommendation.'],'売り切れ (うりきれ) = sold out.'),
+      sReply('Order the '+f2.en+' instead.',X('じゃあ、'+f2.jp+'をお願いします','じゃあ、'+f2.kana+' を おねがいします','Then the '+f2.en+', please.'),[X('じゃあ、'+f.jp+'をお願いします','じゃあ、'+f.kana+' を おねがいします','Then the '+f.en+', please.'),X('じゃあ、いりません','じゃあ、いりません','Then I do not need it.')],'じゃあ = well then.'));
+    else if (k===1){
+      const reg=X('普通でお願いします','ふつう で おねがいします','Regular, please.'), mild=X('辛くしないでください','からく しないで ください','Please do not make it spicy.'), hot=X('辛口でお願いします','からくち で おねがいします','Extra spicy, please.');
+      const want=pick([reg,mild,hot]);
+      s.push(
+        sMean(X('辛さはどうしますか','からさ は どう します か','How spicy would you like it?'),['How big would you like it?','Is it too spicy?'],'辛さ (からさ) = spiciness.'),
+        sReply('Say: '+want.en,want,others([reg,mild,hot],want,2),'普通 = regular. 辛口 (からくち) = spicy. 辛くしないで = do not make it spicy.'));
+    } else s.push(sMean(X('少々お待ちください','しょうしょう おまち ください','Please wait a moment.'),['Please come this way.','Please pay first.'],'少々 = a little. お待ちください = please wait.'));
+    s.push(
+      sMean(X('以上でよろしいですか','いじょう で よろしい です か','Is that everything?'),['Is this for here?','Is the taste okay?'],'以上 (いじょう) = that is all.'),
+      sReply('Say: yes, that is all.',X('はい、以上です','はい、いじょう です','Yes, that is all.'),[X('はい、いります','はい、いります','Yes, I need it.')],'以上です = that is all.'));
+    return {goal:'Order food and drinks', steps:s};
+ }},
+ {id:'r_pay', icon:'💴', title:'A problem, then the bill', who:'Server', make(){
+    const probs=[['Tell them you did not order this.',X('これは注文していません','これ は ちゅうもん して いません','I did not order this.')],
+                 ['Tell them your food has not come yet.',X('料理がまだ来ていません','りょうり が まだ きて いません','My food has not come yet.')],
+                 ['Ask for one more glass of water.',X('お水をもう一杯ください','おみず を もう いっぱい ください','One more glass of water, please.')]];
+    const p=pick(probs), tog=coin();
+    const t1=X('一緒でお願いします','いっしょ で おねがいします','Together, please.'), t2=X('別々でお願いします','べつべつ で おねがいします','Separately, please.');
+    return {goal:'Sort out a problem and pay the bill', steps:[
+      sReply(p[0],p[1],others(probs,p,2).map(x=>x[1]),'注文 = order. まだ = not yet. もう一杯 (もういっぱい) = one more glass.'),
+      sMean(X('申し訳ありません。すぐお持ちします','もうしわけ ありません。 すぐ おもち します','I am very sorry. I will bring it right away.'),['I am very sorry. We are sold out.','Thank you. Please wait a moment.'],'申し訳ありません is a very polite sorry. すぐ = right away.'),
+      sBuild('The check, please.','お会計 を お願いします','おかいけい を おねがいします','The pattern is [thing] を お願いします.'),
+      sMean(X('お会計はご一緒ですか、別々ですか','おかいけい は ごいっしょ です か、 べつべつ です か','Will you pay together or separately?'),['Will you pay by cash or card?','Is this for here or to go?'],'ご一緒 (ごいっしょ) = together. 別々 (べつべつ) = separately.'),
+      sReply(tog?'Say: together, please.':'Say: separately, please.',tog?t1:t2,[tog?t2:t1],'一緒 (いっしょ) = together. 別々 (べつべつ) = separately.'),
+      dPrice(P_MID,'お会計は','おかいけい は','The total is '),
+      sReply('Thank them for the meal as you leave.',X('ごちそうさまでした','ごちそうさまでした','Thank you for the meal.'),[X('いただきます','いただきます','(said before eating)'),X('お邪魔します','おじゃまします','(said when entering a home)')],'ごちそうさまでした is said after eating. いただきます is said before.')
+    ]};
+ }},
+ {id:'r_ramen', icon:'🍥', title:'Ticket-machine ramen shop', who:'Staff', make(){
+    const fls=[X('味噌','みそ','miso'),X('醤油','しょうゆ','soy sauce'),X('塩','しお','salt'),X('豚骨','とんこつ','pork bone')], fl=pick(fls);
+    const firms=[X('普通でお願いします','ふつう で おねがいします','Regular, please.'),X('硬めでお願いします','かため で おねがいします','Firm, please.'),X('やわらかめでお願いします','やわらかめ で おねがいします','Soft, please.')], firm=pick(firms);
+    return {goal:'Order at a ramen shop with a ticket machine', steps:[
+      sMean(X('先に食券を買ってください','さき に しょっけん を かって ください','Please buy a meal ticket first.'),['Please sit down first.','Please pay after you eat.'],'先に (さきに) = first. 食券 = meal ticket.'),
+      sReply('Ask which one they recommend.',X('おすすめはどれですか','おすすめ は どれ です か','Which one do you recommend?'),[X('おすすめはいくらですか','おすすめ は いくら です か','How much is the recommended one?'),X('これは何ですか','これ は なん です か','What is this?')],'どれ = which one.'),
+      sDetail(X('こちらの'+fl.jp+'ラーメンが人気です','こちら の '+fl.kana+' ラーメン が にんき です','This '+fl.en+' ramen is popular.'),'Which ramen is popular?',cap(fl.en)+' ramen',others(fls,fl,3).map(x=>cap(x.en)+' ramen'),'味噌 みそ miso · 醤油 しょうゆ soy sauce · 塩 しお salt · 豚骨 とんこつ pork bone. 人気 (にんき) = popular.'),
+      sMean(X('麺の硬さはどうしますか','めん の かたさ は どう します か','How firm would you like the noodles?'),['How many noodles would you like?','How spicy would you like it?'],'麺 (めん) = noodles. 硬さ (かたさ) = firmness.'),
+      sReply('Say: '+firm.en,firm,others(firms,firm,2),'普通 = regular. 硬め (かため) = on the firm side. やわらかめ = on the soft side.'),
+      sMean(X('大盛りは無料です','おおもり は むりょう です','A large portion is free.'),['A large portion is 100 yen.','Large portions are sold out.'],'大盛り = large portion. 無料 = free.'),
+      sReply('Take the large portion.',X('じゃあ、大盛りでお願いします','じゃあ、おおもり で おねがいします','Then a large, please.'),[X('じゃあ、並でお願いします','じゃあ、なみ で おねがいします','Then a regular, please.')],'並 (なみ) = regular size.')
+    ]};
+ }},
+ {id:'r_allergy', icon:'⚠️', title:'Allergy check', who:'Server', make(){
+    const als=shuffle([X('えび','えび','shrimp'),X('卵','たまご','egg'),X('ピーナッツ','ピーナッツ','peanut'),X('小麦','こむぎ','wheat'),X('牛乳','ぎゅうにゅう','milk')]), al=als[0], al2=als[1];
+    return {goal:'Order safely with a food allergy', steps:[
+      sReply('Say you have a '+al.en+' allergy.',X(al.jp+'アレルギーがあります',al.kana+' アレルギー が あります','I have a '+al.en+' allergy.'),[X(al2.jp+'アレルギーがあります',al2.kana+' アレルギー が あります','I have a '+al2.en+' allergy.'),X(al.jp+'が好きです',al.kana+' が すき です','I like '+al.en+'.')],'[food] アレルギー が あります = I have a [food] allergy.'),
+      sMean(X('こちらの料理には'+al.jp+'が入っています','こちら の りょうり には '+al.kana+' が はいって います','This dish contains '+al.en+'.'),['This dish has no '+al.en+'.','This dish comes with '+al.en+' on the side.'],'入っています (はいっています) = is in it.'),
+      sReply('Ask if there is something without '+al.en+'.',X(al.jp+'が入っていないものはありますか',al.kana+' が はいって いない もの は あります か','Is there something without '+al.en+'?'),[X(al.jp+'が入っているものはありますか',al.kana+' が はいって いる もの は あります か','Is there something with '+al.en+'?'),X(al.jp+'はいくらですか',al.kana+' は いくら です か','How much is the '+al.en+'?')],'入っていない = is not in it. もの = thing.'),
+      sMean(X('こちらは大丈夫です','こちら は だいじょうぶ です','This one is okay.'),['This one is not okay.','This one is popular.'],'大丈夫 = okay, safe.'),
+      sReply('Order that one.',X('じゃあ、それをください','じゃあ、それ を ください','Then that one, please.'),[X('じゃあ、いりません','じゃあ、いりません','Then I do not need it.')],'それ = that one. じゃあ = well then.'),
+      sMean(X('かしこまりました','かしこまりました','Certainly.'),['I am sorry.','Please wait.'],'かしこまりました is a very polite わかりました. Staff use it.')
+    ]};
+ }}
+],
+temple: [
+ {id:'t_ticket', icon:'🎟️', title:'Temple ticket window', who:'Staff', make(){
+    const n=1+rnd(4);
+    return {goal:'Buy tickets and learn the rules', steps:[
+      sBuild(cap(tix(n))+', please.','大人 '+MAI[n].jp+' ください','おとな '+MAI[n].kana+' ください','[what] [how many] ください. 枚 (まい) counts flat things like tickets.'),
+      dPrice(P_TEMPLE,'拝観料は','はいかんりょう は','The admission fee is '),
+      sReply('Ask until what time it is open.',X('何時まで開いていますか','なんじ まで あいて います か','Until what time are you open?'),[X('何時から開いていますか','なんじ から あいて います か','From what time are you open?'),X('今何時ですか','いま なんじ です か','What time is it now?')],'まで = until. から = from.'),
+      dTime([4,5,6],(j,k,l)=>X('午後'+j+'までです','ごご '+k+' まで です','Until '+l+' p.m.'),'When does it close?'),
+      sMean(X('ここで靴を脱いでください','ここ で くつ を ぬいで ください','Please take off your shoes here.'),['Please put on your shoes here.','Please leave your bag here.'],'靴 = shoes. 脱いで (ぬいで) = take off.'),
+      coin() ? sMean(X('中は撮影禁止です','なか は さつえい きんし です','Photography is not allowed inside.'),['You may take photos inside.','The inside is closed today.'],'中 = inside. 撮影禁止 = no photography.')
+             : sMean(X('お庭は撮影できます','おにわ は さつえい できます','You can take photos in the garden.'),['Photography is not allowed in the garden.','The garden is closed today.'],'お庭 = garden. できます = can do.')
+    ]};
+ }},
+ {id:'t_photo', icon:'📸', title:'Asking a stranger for a photo', who:'Stranger', make(){
+    const y=coin();
+    return {goal:'Get a photo taken and make small talk', steps:[
+      sBuild('Excuse me, could you take a photo?','すみません 写真 を 撮って もらえますか','すみません しゃしん を とって もらえますか','[verb]て もらえますか = could you do it for me?'),
+      sMean(X('いいですよ。ここを押しますか','いい です よ。 ここ を おします か','Sure. Do I press here?'),['Sorry. I am in a hurry.','Sure. Where should I stand?'],'押します (おします) = press.'),
+      sReply('Say: yes, please press there.',X('はい、そこを押してください','はい、そこ を おして ください','Yes, please press there.'),[X('はい、そこを見てください','はい、そこ を みて ください','Yes, please look there.')],'押して = press. 見て = look.'),
+      sMean(X('もう一枚撮りますか','もう いちまい とります か','Shall I take one more?'),['Shall I take a video?','Is one enough?'],'もう一枚 (もういちまい) = one more photo.'),
+      sReply(y?'Say: yes, please.':'Say: no, thank you.',y?YES:NO,[y?NO:YES],'お願いします = please. 大丈夫です = I am fine, no thanks.'),
+      sMean(X('どこから来ましたか','どこ から きました か','Where are you from?'),['Where are you going?','When did you come?'],'どこから = from where.'),
+      sReply('Say you came from America.',X('アメリカから来ました','アメリカ から きました','I came from America.'),[X('アメリカに行きます','アメリカ に いきます','I am going to America.'),X('アメリカが好きです','アメリカ が すき です','I like America.')],'から = from. 来ました = came.'),
+      sMean(X('日本語が上手ですね','にほんご が じょうず です ね','Your Japanese is good!'),['Is your Japanese okay?','Japanese is difficult, right?'],'上手 (じょうず) = skilled.'),
+      sReply('Be modest. Say: no, not yet.',X('いいえ、まだまだです','いいえ、まだまだ です','No, I still have a long way to go.'),[X('はい、上手です','はい、じょうず です','Yes, I am good.')],'まだまだです is the standard modest reply to praise.')
+    ]};
+ }},
+ {id:'t_charm', icon:'🧧', title:'Charm and stamp counter', who:'Shrine staff', make(){
+    const kinds=[X('健康','けんこう','health'),X('交通安全','こうつうあんぜん','safe travel'),X('恋愛','れんあい','love'),X('学業','がくぎょう','study')], kd=pick(kinds);
+    const kl=x=>X(x.jp+'のお守りをください',x.kana+' の おまもり を ください','A charm for '+x.en+', please.');
+    return {goal:'Buy a charm and get a temple stamp', steps:[
+      sReply('Ask how much this charm is.',X('このお守りはいくらですか','この おまもり は いくら です か','How much is this charm?'),[X('このお守りは何ですか','この おまもり は なん です か','What is this charm?'),X('お守りはどこですか','おまもり は どこ です か','Where are the charms?')],'いくら = how much.'),
+      dPrice(P_TEMPLE),
+      sMean(X('どんなお守りがいいですか','どんな おまもり が いい です か','What kind of charm would you like?'),['Which charm is popular?','How many charms would you like?'],'どんな = what kind of.'),
+      sReply('Ask for a charm for '+kd.en+'.',kl(kd),others(kinds,kd,3).map(kl),'健康 health · 交通安全 safe travel · 恋愛 love · 学業 study.'),
+      sReply('Ask for a temple stamp.',X('御朱印をお願いします','ごしゅいん を おねがいします','A temple stamp, please.'),[X('おみくじをお願いします','おみくじ を おねがいします','A fortune slip, please.')],'御朱印 (ごしゅいん) = the hand-written temple stamp.'),
+      sMean(X('御朱印帳はお持ちですか','ごしゅいんちょう は おもち です か','Do you have a stamp book?'),['Would you like to buy a stamp book?','Is this your stamp book?'],'帳 (ちょう) = book. お持ちですか = do you have?'),
+      sReply('Say: no, I do not have one.',X('いいえ、持っていません','いいえ、もって いません','No, I do not have one.'),[X('はい、持っています','はい、もって います','Yes, I have one.')],'持っていません = do not have.')
+    ]};
+ }},
+ {id:'t_dir', icon:'🧭', title:'Asking for directions', who:'Passerby', make(){
+    const place=pick([X('清水寺','きよみずでら','Kiyomizu Temple'),X('金閣寺','きんかくじ','Kinkaku-ji'),X('バス停','バスてい','the bus stop'),X('駅','えき','the station'),X('伏見稲荷','ふしみいなり','Fushimi Inari')]);
+    const ords=[X('一つ目','ひとつめ','first'),X('二つ目','ふたつめ','second'),X('三つ目','みっつめ','third')], dirs=[X('右','みぎ','right'),X('左','ひだり','left')];
+    const all=[]; ords.forEach(o=>dirs.forEach(d=>all.push([o,d])));
+    const r=pick(all), lab=t=>cap(t[1].en)+' at the '+t[0].en+' light';
+    return {goal:'Find your way to '+place.en, steps:[
+      sBuild('Excuse me, where is '+place.en+'?','すみません '+place.jp+' は どこ ですか','すみません '+place.kana+' は どこ ですか','The pattern is [place] は どこ ですか.'),
+      sMean(X('この道をまっすぐ行ってください','この みち を まっすぐ いって ください','Go straight along this road.'),['Go back along this road.','Cross this road.'],'道 (みち) = road. まっすぐ = straight.'),
+      sDetail(X(r[0].jp+'の信号を'+r[1].jp+'に曲がってください',r[0].kana+' の しんごう を '+r[1].kana+' に まがって ください','Turn '+r[1].en+' at the '+r[0].en+' traffic light.'),'Where do you turn?',lab(r),others(all,r,3).map(lab),'信号 (しんごう) = traffic light. 右 みぎ = right. 左 ひだり = left. 一つ目 = first, 二つ目 = second, 三つ目 = third.'),
+      sReply('Ask if you can walk there.',X('歩いて行けますか','あるいて いけます か','Can I walk there?'),[X('バスで行けますか','バス で いけます か','Can I go by bus?'),X('歩いて行きますか','あるいて いきます か','Will you walk there?')],'歩いて (あるいて) = on foot. 行けますか = can I go?'),
+      dMin(m=>X('はい、歩いて'+m+'分ぐらいです','はい、あるいて '+MINK[m]+' ぐらい です','Yes, about '+m+' minutes on foot.'),'How long on foot?'),
+      THANKS()
+    ]};
+ }}
+],
+hotel: [
+ {id:'h_in', icon:'🛎️', title:'Hotel check-in', who:'Front desk', make(){
+    return {goal:'Check in to your hotel', steps:[
+      sBuild('Check-in, please.','チェックイン を お願いします','チェックイン を おねがいします','The pattern is [thing] を お願いします.'),
+      sMean(X('お名前をお願いします','おなまえ を おねがいします','Your name, please.'),['Your passport, please.','Your address, please.'],'お名前 = name, polite.'),
+      sMean(X('こちらにご記入ください','こちら に ごきにゅう ください','Please fill this in.'),['Please sign in over there.','Please read this.'],'記入 (きにゅう) = fill in a form.'),
+      dNum([1,2,3,4],n=>X(NIGHT[n].jp+'のご予約ですね',NIGHT[n].kana+' の ごよやく です ね','A reservation for '+NIGHT[n].en+', right?'),'How many nights did they say?',n=>NIGHT[n].en,'泊 counts nights: 一泊 いっぱく, 二泊 にはく, 三泊 さんぱく, 四泊 よんはく.'),
+      sReply('Say: yes, that is right.',X('はい、そうです','はい、そう です','Yes, that is right.'),[X('いいえ、違います','いいえ、ちがいます','No, that is wrong.')],'そうです = that is right. 違います = that is wrong.'),
+      dFloor(f=>X('お部屋は'+f+'階です','おへや は '+FLK[f]+' です','Your room is on floor '+f+'.')),
+      dTime([6,7,8],(j,k,l)=>X('朝食は'+j+'からです','ちょうしょく は '+k+' から です','Breakfast is from '+l+'.'),'When does breakfast start?'),
+      sMean(X('チェックアウトは十一時です','チェックアウト は じゅういちじ です','Check-out is at eleven.'),['Check-out is at ten.','Check-in is at eleven.','Check-out is at one.'],'十一時 (じゅういちじ) = eleven o\'clock.')
+    ]};
+ }},
+ {id:'h_prob', icon:'🔧', title:'Calling the front desk', who:'Front desk', make(){
+    const probs=[['Say the air conditioner is not working.',X('エアコンが動きません','エアコン が うごきません','The air conditioner is not working.')],
+                 ['Say there are no towels.',X('タオルがありません','タオル が ありません','There are no towels.')],
+                 ['Say the Wi-Fi will not connect.',X('ワイファイがつながりません','ワイファイ が つながりません','The Wi-Fi will not connect.')],
+                 ['Say the room is cold.',X('部屋が寒いです','へや が さむい です','The room is cold.')]];
+    const reqs=[['Ask if they can change your room.',X('部屋を変えてもらえますか','へや を かえて もらえます か','Could you change my room?')],
+                ['Ask for one more towel.',X('タオルをもう一枚もらえますか','タオル を もう いちまい もらえます か','Could I get one more towel?')],
+                ['Ask for one more blanket.',X('毛布をもう一枚もらえますか','もうふ を もう いちまい もらえます か','Could I get one more blanket?')]];
+    const p=pick(probs), r=pick(reqs);
+    return {goal:'Get a room problem fixed', steps:[
+      sReply(p[0],p[1],others(probs,p,3).map(x=>x[1]),'動きません = does not work. つながりません = does not connect. 寒い = cold.'),
+      sMean(X('お部屋番号を教えてください','おへや ばんごう を おしえて ください','Please tell me your room number.'),['Please tell me your name.','Please come to the front desk.'],'部屋番号 = room number.'),
+      sMean(X('申し訳ありません。すぐに伺います','もうしわけ ありません。 すぐ に うかがいます','I am very sorry. I will come right away.'),['I am very sorry. Please wait until tomorrow.','Thank you. Please come to the front desk.'],'伺います (うかがいます) = I will come to you, humble.'),
+      sReply(r[0],r[1],others(reqs,r,2).map(x=>x[1]),'変えて = change. もう一枚 = one more (flat thing). 毛布 (もうふ) = blanket.'),
+      coin() ? sMean(X('かしこまりました。少々お待ちください','かしこまりました。 しょうしょう おまち ください','Certainly. Please wait a moment.'),['I am sorry. That is not possible.','Certainly. That will cost extra.'],'かしこまりました = certainly.')
+             : sMean(X('申し訳ありません。今日はできません','もうしわけ ありません。 きょう は できません','I am very sorry. We cannot do that today.'),['Certainly. Please wait a moment.','I am very sorry. That will cost extra.'],'できません = cannot do.'),
+      THANKS()
+    ]};
+ }},
+ {id:'h_out', icon:'🧳', title:'Check-out and luggage', who:'Front desk', make(){
+    const hs=[3,4,5,6], h=pick(hs), nb=1+rnd(3);
+    const hl=x=>X(KN[x]+'時まで荷物を預かってもらえますか',HOURK[x]+' まで にもつ を あずかって もらえます か','Could you hold my luggage until '+x+'?');
+    const cl=x=>X(THINGS[x].jp+'です',THINGS[x].kana+' です',cap(NUM[x])+'.');
+    return {goal:'Check out and leave your bags', steps:[
+      sBuild('Check-out, please.','チェックアウト を お願いします','チェックアウト を おねがいします','The pattern is [thing] を お願いします.'),
+      sMean(X('鍵をお返しください','かぎ を おかえし ください','Please return your key.'),['Please keep your key.','Did you lose your key?'],'お返しください = please give it back.'),
+      sReply('Ask them to hold your luggage until '+h+' o\'clock.',hl(h),others(hs,h,3).map(hl),'三時 さんじ · 四時 よじ · 五時 ごじ · 六時 ろくじ. まで = until.'),
+      sMean(X('かしこまりました。お荷物はいくつですか','かしこまりました。 おにもつ は いくつ です か','Certainly. How many bags?'),['Certainly. Whose bags are they?','Certainly. Where are your bags?'],'いくつ = how many.'),
+      sReply('Say: '+NUM[nb]+'.',cl(nb),others([1,2,3],nb,2).map(cl),'一つ ひとつ = one. 二つ ふたつ = two. 三つ みっつ = three.'),
+      sMean(X('この番号札をお持ちください','この ばんごうふだ を おもち ください','Please take this number tag.'),['Please write your number here.','Please show me your number tag.'],'番号札 (ばんごうふだ) = number tag.'),
+      sReply('Ask them to call a taxi.',X('タクシーを呼んでください','タクシー を よんで ください','Please call a taxi.'),[X('タクシー乗り場はどこですか','タクシーのりば は どこ です か','Where is the taxi stand?')],'呼んで (よんで) = call.'),
+      dMin(m=>X(m+'分ぐらいで来ます',MINK[m]+' ぐらい で きます','It will come in about '+m+' minutes.'),'When will the taxi come?')
+    ]};
+ }},
+ {id:'h_bath', icon:'♨️', title:'Asking about the bath', who:'Front desk', make(){
+    return {goal:'Find out how the hotel bath works', steps:[
+      sReply('Ask where the large bath is.',X('大浴場はどこですか','だいよくじょう は どこ です か','Where is the large bath?'),[X('大浴場は何時からですか','だいよくじょう は なんじ から です か','From what time is the large bath open?'),X('大浴場はいくらですか','だいよくじょう は いくら です か','How much is the large bath?')],'大浴場 (だいよくじょう) = large public bath.'),
+      dFloor(f=>X(f+'階にあります',FLK[f]+' に あります','It is on floor '+f+'.')),
+      sReply('Ask until what time you can use it.',X('何時まで入れますか','なんじ まで はいれます か','Until what time can I go in?'),[X('何時から入れますか','なんじ から はいれます か','From what time can I go in?'),X('今入れますか','いま はいれます か','Can I go in now?')],'入れます (はいれます) = can enter. まで = until.'),
+      dTime([10,11,12],(j,k,l)=>X('夜'+j+'までです','よる '+k+' まで です','Until '+l+' at night.'),'When does it close at night?'),
+      sMean(X('タオルはお部屋からお持ちください','タオル は おへや から おもち ください','Please bring a towel from your room.'),['Towels are in the bath area.','Please return towels to your room.'],'お持ちください = please bring.'),
+      sMean(X('入れ墨のある方はご遠慮ください','いれずみ の ある かた は ごえんりょ ください','Guests with tattoos, please refrain.'),['Guests with tattoos are welcome.','Guests with children, please refrain.'],'入れ墨 (いれずみ) = tattoo. ご遠慮ください = please refrain.'),
+      sMean(X('ごゆっくりどうぞ','ごゆっくり どうぞ','Please take your time.'),['Please hurry.','Please be quiet.'],'ゆっくり = slowly, relaxed.')
+    ]};
+ }}
+]
+};
+
+/* ---------- boss engine ---------- */
+function pickBoss(placeId){
+  const list = BOSSES[placeId];
+  if (!save.boss) save.boss = {};
+  const low = Math.min.apply(null, list.map(b=>save.boss[b.id]||0));
+  const sc = pick(list.filter(b=>(save.boss[b.id]||0)===low));   // the one you have seen least
+  save.boss[sc.id] = (save.boss[sc.id]||0)+1; writeSave();
+  return sc;
+}
+function fill3(given, pool, same, right){
+  const out=[];
+  given.concat(shuffle(pool)).forEach(x=>{ if (out.length<3 && !same(x,right) && !out.some(y=>same(x,y))) out.push(x); });
+  return out;
+}
+function makeBossQ(st, e){
+  const npc=st.npc, q={boss:true, noMiss:true, step:st, item:{key:'B:'+e.id+':'+e.stepIdx}};
+  const hide = st.t==='detail' && listenOK();
+  let pre='<div class="goal">🎯 '+esc(e.goal)+'</div>';
+  if (npc){
+    q.sayStart=npc.jp; q.autoSay=true;
+    const shown = st.t==='detail' ? npc.kana : npc.jp;
+    pre+='<div class="bub"><div class="who">'+esc(e.who)+' says:</div>'
+      +(hide ? '<div id="hid"><button class="hear" id="hearBtn" aria-label="Hear it again">🔊</button><div class="rom">Listen. Tap to hear it again.</div>'
+               +'<button class="link" id="showTxt">Can\'t hear it? Show the text</button></div><div class="bj sm" id="hidTxt" style="display:none">'+J(npc.kana)+'</div>'
+             : '<div class="bj '+(shown.length>12?'sm':'')+'">'+J(shown)+'</div>'+(save.set.romaji?'<div class="rom">'+esc(romaji(npc.kana))+'</div>':'')
+               +'<button class="link" id="hearBtn">🔊 Hear it again</button>')
+      +'</div>';
+  } else {
+    // show the line you are answering, so it reads like a conversation
+    const prev = e.steps[e.stepIdx-1];
+    if (prev && prev.npc) pre+='<div class="bub"><div class="who">'+esc(e.who)+' said:</div><div class="bj sm">'+J(prev.npc.jp)+'</div><div class="rom">'+esc(prev.npc.en)+'</div></div>';
+    else pre+='<div class="bub you">You speak first.</div>';
+  }
+  q.pre=pre; q.main='';
+  if (st.t==='mean' || st.t==='detail'){
+    q.type = st.t==='mean'?'bmean':'bdetail';
+    q.ask = st.t==='mean' ? 'What did they say?' : st.ask;
+    const right = st.t==='mean' ? npc.en : st.right;
+    const wrong = st.t==='mean' ? fill3(st.wrong, MEAN_POOL, (a,b)=>a===b, right) : st.wrong;
+    q.opts = shuffle([{h:esc(right),ok:true}].concat(wrong.map(x=>({h:esc(x)}))));
+    q.card = {jp:npc.jp, kana:npc.kana, mean:npc.en}; q.say=npc.jp; q.limit=20; q.fast=7;
+  } else if (st.t==='reply'){
+    q.type='breply'; q.ask='Pick your reply.';
+    q.main='<div class="main en">'+esc(st.goal)+'</div>';
+    const wrong = fill3(st.wrong, REPLY_POOL, (a,b)=>a.jp===b.jp||a.en===b.en, st.right);
+    q.opts = shuffle([{h:J(st.right.jp)+romLine(st.right.kana),ok:true,ln:st.right}].concat(wrong.map(x=>({h:J(x.jp)+romLine(x.kana),ln:x}))));
+    q.card = {jp:st.right.jp, kana:st.right.kana, mean:st.right.en}; q.say=st.right.jp; q.limit=25; q.fast=9;
+  } else {
+    q.type='order'; q.ask='Build your reply:';
+    q.main='<div class="main en">'+esc(st.goal)+'</div>';
+    q.item.chunks=st.chunks; q.item.why=st.why;
+    let t=shuffle(st.chunks), g=0; while (t.join('|')===st.chunks.join('|') && g++<10) t=shuffle(st.chunks);
+    q.tiles=t; q.placed=[];
+    q.card = {jp:st.chunks.join(''), kana:st.kana, mean:st.goal}; q.say=st.chunks.join(''); q.limit=35; q.fast=14;
+  }
+  return q;
+}
+function showBossIntro(){
+  phase='bossintro';
+  const e=run.enemy;
+  app.innerHTML='<div class="over"><div class="box center">'
+    +'<div class="tagline">BOSS · A REAL CONVERSATION</div>'
+    +'<div class="placejp">'+e.face+'</div><h2>'+esc(e.name)+'</h2>'
+    +'<p class="sub">Your goal: '+esc(e.goal)+'.<br><br>'+e.steps.length+' steps. Understand what they say and answer back. '
+    +'A mistake hurts, but the conversation keeps going. Finish it alive to win a boss reward. A flawless talk wins extra.</p>'
+    +'<button class="big" id="bossGo">Start talking ▶</button></div></div>';
+  $('bossGo').onclick=()=>{ if(phase==='bossintro') nextQuestion(); };
+}
+
+/* ---------- shop: permanent upgrades bought with yen ---------- */
+const SHOP_GROWTH = 2.2;   // each level costs this many times the one before
+const SHOP = [
+  {id:'hp',     icon:'💪', name:'Stamina Training', per:'+10 max HP',                      max:5, cost:300},
+  {id:'dmg',    icon:'🗡️', name:'Sword Practice',   per:'+1 damage on every hit',          max:5, cost:400},
+  {id:'time',   icon:'🧘', name:'Calm Mind',        per:'+1 second on every timer',        max:3, cost:500},
+  {id:'fast',   icon:'👀', name:'Quick Eyes',       per:'Fast window +0.5 seconds',        max:4, cost:350},
+  {id:'fastm',  icon:'⚡', name:'Speed Bonus',      per:'Fast-answer damage +0.1×',        max:5, cost:400},
+  {id:'yen',    icon:'💴', name:'Haggling',         per:'+10% yen from runs',              max:5, cost:400},
+  {id:'rest',   icon:'🍵', name:'Tea Break',        per:'+5 HP healed between floors',     max:4, cost:300},
+  {id:'hint',   icon:'🔍', name:'Pocket Dictionary',per:'Start with +1 Hint',              max:3, cost:500},
+  {id:'freeze', icon:'⏸️', name:'Stopwatch',        per:'Start with +1 Freeze',            max:3, cost:500},
+  {id:'potion', icon:'🧪', name:'First-Aid Kit',    per:'Start with +1 Potion',            max:3, cost:500},
+  {id:'reroll', icon:'🎲', name:'Travel Guide',     per:'+1 reroll of upgrade choices per run', max:2, cost:1200}
+];
+function lv(id){ return (save.shop && save.shop[id]) || 0; }
+function shopCost(it){ return Math.round(it.cost*Math.pow(SHOP_GROWTH, lv(it.id))/50)*50; }
+
+/* ---------- upgrades: pick 1 of 3 after each enemy (last for one run) ---------- */
+const UPGRADES = [
+  {id:'katana',  icon:'🗡️', name:'Sharp Katana',    desc:'+3 damage on every hit.',                         f:r=>{r.st.baseDmg+=3;}},
+  {id:'quick',   icon:'⚡', name:'Quick Draw',      desc:'Fast-answer bonus +0.25×.',                       f:r=>{r.st.fastMult+=0.25;}},
+  {id:'fuse',    icon:'🧨', name:'Long Fuse',       desc:'The fast-bonus window lasts 1 second longer.',    f:r=>{r.st.fastAdd+=1;}},
+  {id:'watch',   icon:'⌚', name:'Pocket Watch',    desc:'+2 seconds on every timer.',                      f:r=>{r.st.timeAdd+=2;}},
+  {id:'steady',  icon:'🐢', name:'Slow and Steady', desc:'Answers after the fast window deal +25% damage.', f:r=>{r.st.slowMult+=0.25;}},
+  {id:'momentum',icon:'🌊', name:'Momentum',        desc:'Your combo grows 0.05× faster per right answer.', f:r=>{r.st.comboStep+=0.05;}},
+  {id:'onigiri', icon:'🍙', name:'Onigiri',         desc:'Heal 25 HP now.',                                 ok:r=>r.hp<r.maxHp, f:r=>{r.hp=Math.min(r.maxHp,r.hp+25);}},
+  {id:'bento',   icon:'🍱', name:'Bento Box',       desc:'+15 max HP and heal 15 HP.',                      f:r=>{r.maxHp+=15; r.hp+=15;}},
+  {id:'coat',    icon:'🧥', name:'Thick Coat',      desc:'Take 2 less damage from every miss.',             ok:r=>r.st.armor<6, f:r=>{r.st.armor+=2;}},
+  {id:'omamori', icon:'🧿', name:'Omamori',         desc:'Your next 2 misses do not break your streak.',    f:r=>{r.st.guard+=2;}},
+  {id:'purse',   icon:'👛', name:'Coin Purse',      desc:'+25% yen for the rest of this run.',              f:r=>{r.st.yenMult+=0.25;}},
+  {id:'gyoza',   icon:'🥟', name:'Gyoza',           desc:'Heal 2 HP on every fast answer.',                 f:r=>{r.st.leech+=2;}},
+  {id:'hunter',  icon:'🎯', name:'Elite Hunter',    desc:'+40% damage to elites. Boss mistakes hurt 3 less.', f:r=>{r.st.eliteDmg+=0.4; r.st.bossArmor+=3;}},
+  {id:'phrase',  icon:'🔍', name:'Phrasebook',      desc:'+2 Hint charges.',                                f:r=>{r.ab.hint+=2;}},
+  {id:'ice',     icon:'🧊', name:'Ice Pack',        desc:'+2 Freeze charges.',                              f:r=>{r.ab.freeze+=2;}},
+  {id:'drink',   icon:'🧪', name:'Vending Machine Drink', desc:'+1 Potion charge.',                         f:r=>{r.ab.potion+=1;}},
+  /* boss rewards: only offered after a boss conversation */
+  {id:'tower',   icon:'🏯', name:'Castle Tower',    desc:'Combo cap +1.0× and combo grows 0.05× faster.',   rare:1, f:r=>{r.st.comboMax+=1; r.st.comboStep+=0.05;}},
+  {id:'bolt',    icon:'🌩️', name:'Lightning Reflexes', desc:'Answers under 2 seconds deal +75% damage.',    rare:1, f:r=>{r.st.lightning+=0.75;}},
+  {id:'buzzer',  icon:'⏰', name:'Buzzer Beater',   desc:'Answers with under 3 seconds left deal double damage.', rare:1, f:r=>{r.st.buzzer+=1;}},
+  {id:'wind',    icon:'🪽', name:'Second Wind',     desc:'Once this run, survive a fatal hit with 40 HP.',  rare:1, ok:r=>!r.st.wind, f:r=>{r.st.wind=1;}},
+  {id:'feast',   icon:'🍣', name:'Sushi Feast',     desc:'+40 max HP and heal to full.',                    rare:1, f:r=>{r.maxHp+=40; r.hp=r.maxHp;}},
+  {id:'kit',     icon:'🎒', name:'Travel Kit',      desc:'+2 Hint, +2 Freeze and +2 Potion.',               rare:1, f:r=>{r.ab.hint+=2; r.ab.freeze+=2; r.ab.potion+=2;}},
+  {id:'belt',    icon:'🥋', name:'Black Belt',      desc:'+8 damage on every hit.',                         rare:1, f:r=>{r.st.baseDmg+=8;}},
+  {id:'sage',    icon:'⏳', name:'Zen Garden',      desc:'+4 seconds on every timer. Fast window +2 seconds.', rare:1, f:r=>{r.st.timeAdd+=4; r.st.fastAdd+=2;}},
+  {id:'gold',    icon:'🪙', name:'Lucky Cat',       desc:'+60% yen for the rest of this run.',              rare:1, f:r=>{r.st.yenMult+=0.6;}},
+  {id:'armor',   icon:'🛡️', name:'Samurai Armor',   desc:'Take 4 less damage from every miss.',             rare:1, ok:r=>r.st.armor<8, f:r=>{r.st.armor+=4;}},
+  {id:'sensei',  icon:'👘', name:'Sensei',          desc:'Fast-answer bonus +0.6×.',                        rare:1, f:r=>{r.st.fastMult+=0.6;}}
+];
+const UMAP = {}; UPGRADES.forEach(u=>UMAP[u.id]=u);
+
+/* ---------- a run ---------- */
+let run=null, phase='home', paused=false, tick=null, advanceTimer=null;
+
+function missW(key){ return save.miss[key]||0; }
+function pickWord(){
+  const place = PLACES[run.floor].id;
+  let pool = WORDS.filter(w => (w.place===place || w.place==='any') && run.recent.indexOf(w.key)<0);
+  if (!pool.length) pool = WORDS;
+  return weighted(pool, w => (w.place==='any'?0.45:1) * (1 + 2*missW(w.key)));
+}
+function pickFrom(list){
+  let pool = list.filter(x=>run.recent.indexOf(x.key)<0); if(!pool.length) pool=list;
+  return weighted(pool, x=>1+2*missW(x.key));
+}
+function comboMult(streak){ return streak<1 ? 1 : Math.min(run.st.comboMax, 1 + run.st.comboStep*(streak-1)); }
+
+function startRun(){
+  if (save.set.sound) unlockVoice();
+  const hp = CFG.playerHP + 10*lv('hp');
+  run = {floor:0, idx:0, hp:hp, maxHp:hp, streak:0, bestStreak:0, yen:0,
+         right:0, total:0, missed:[], recent:[], elitesUsed:[], eliteOnFloor:0, enemy:null, q:null, t0:Date.now(), kills:0,
+         picks:{}, rerolls:lv('reroll'),
+         ab:{hint:1+lv('hint'), freeze:1+lv('freeze'), potion:1+lv('potion')},
+         st:{baseDmg:CFG.baseDmg+lv('dmg'), comboStep:CFG.comboStep, comboMax:CFG.comboMax,
+             fastMult:CFG.fastMult+0.1*lv('fastm'), fastAdd:0.5*lv('fast'), timeAdd:lv('time'),
+             slowMult:1, lightning:0, buzzer:0, eliteDmg:0, bossArmor:0, armor:0, guard:0, wind:0, leech:0,
+             yenMult:1+0.1*lv('yen'), restHeal:CFG.restHeal+5*lv('rest')}};
+  showFloorIntro(false);
+}
+function spawnEnemy(){
+  const p = PLACES[run.floor], f = run.floor, last = run.idx===CFG.enemiesPerFloor-1;
+  let e;
+  if (last){
+    const sc = pickBoss(p.id), made = sc.make();
+    e = {kind:'boss', face:sc.icon, name:sc.title, tag:'BOSS · a real conversation', id:sc.id, who:sc.who,
+         goal:made.goal, steps:made.steps, stepIdx:0, hp:made.steps.length, maxHp:made.steps.length, misses:0};
+  } else {
+    const hp = CFG.enemyHP + CFG.enemyHPperFloor*f;
+    const cands = Object.keys(save.miss).filter(k=>WMAP[k] && run.elitesUsed.indexOf(k)<0).sort((a,b)=>save.miss[b]-save.miss[a]);
+    if (cands.length && run.eliteOnFloor<2 && Math.random()<CFG.eliteChance){
+      const k = cands[rnd(Math.min(3,cands.length))];
+      run.elitesUsed.push(k); run.eliteOnFloor++;
+      const eh = Math.round(hp*CFG.eliteMult);
+      e = {kind:'elite', face:'👹', name:WMAP[k].jp, word:k, hp:eh, maxHp:eh, tag:'★ ELITE · a word you missed', turn:0, used:[]};
+    } else {
+      const foe = p.foes[run.idx % p.foes.length];
+      e = {kind:'normal', face:foe[0], name:foe[1], hp:hp, maxHp:hp, tag:''};
+    }
+  }
+  run.enemy = e;
+}
+function enterEnemy(){ spawnEnemy(); if (run.enemy.kind==='boss') showBossIntro(); else nextQuestion(); }
+function ehpText(e){ return e.kind==='boss' ? 'Conversation: '+(e.maxHp-e.hp)+' of '+e.maxHp+' steps done' : 'Enemy HP '+e.hp+' / '+e.maxHp; }
+function nextQuestion(){
+  const e = run.enemy; let q;
+  if (e.kind==='boss'){
+    q = makeBossQ(e.steps[e.stepIdx], e); e.stepIdx++;
+  } else if (e.kind==='elite'){
+    let w = WMAP[e.word];
+    if (e.turn%2===1){
+      const others = Object.keys(save.miss).filter(k=>WMAP[k] && k!==e.word);
+      w = others.length ? WMAP[pick(others)] : pickWord();
+    }
+    e.turn++;
+    q = makeWordQ(w, w.key===e.word ? e.used : null);
+    if (w.key===e.word) e.used.push(q.type);
+  } else {
+    const r = Math.random();
+    if (r<0.12) q = makePartQ(pickFrom(PARTS));
+    else if (r<0.24) q = makeOrderQ(pickFrom(SENTS));
+    else q = makeWordQ(pickWord());
+  }
+  run.recent.push(q.item.key); if (run.recent.length>18) run.recent.shift();
+  q.limit += run.st.timeAdd; q.fast += run.st.fastAdd;
+  q.left = q.limit*1000;
+  run.q = q; phase='ask';
+  renderFight();
+  if (q.autoSay) speak(q.sayStart||q.say);
+}
+
+function answer(ok, chosen){
+  if (phase!=='ask') return;
+  phase='feedback';
+  const q=run.q, e=run.enemy, key=q.item.key, st=run.st;
+  const secs = (q.limit*1000 - q.left)/1000;
+  run.total++;
+  let fb = {ok:ok, timeout: chosen===-1, tags:[]};
+  if (ok){
+    run.right++; run.streak++; run.bestStreak=Math.max(run.bestStreak,run.streak);
+    const combo = comboMult(run.streak), fast = secs<=q.fast;
+    let mult = combo;
+    if (combo>1) fb.tags.push('combo ×'+combo.toFixed(2));
+    if (fast){ mult*=st.fastMult; fb.tags.push('⚡ fast ×'+st.fastMult.toFixed(2)); }
+    else if (st.slowMult>1){ mult*=st.slowMult; fb.tags.push('🐢 steady ×'+st.slowMult.toFixed(2)); }
+    if (st.lightning && secs<=2){ mult*=1+st.lightning; fb.tags.push('🌩️ lightning'); }
+    if (st.buzzer && q.left<=3000){ mult*=1+st.buzzer; fb.tags.push('⏰ buzzer beater'); }
+    if (st.eliteDmg && e.kind==='elite'){ mult*=1+st.eliteDmg; fb.tags.push('🎯 hunter'); }
+    const dmg = Math.round(st.baseDmg*mult);
+    e.hp = Math.max(0, e.hp-(e.kind==='boss'?1:dmg));
+    if (fast && st.leech){ run.hp=Math.min(run.maxHp, run.hp+st.leech); fb.tags.push('🥟 +'+st.leech+' HP'); }
+    let yen = (e.kind==='boss'?15:10)*combo;
+    if (e.kind==='boss'){ fb.tags = fast ? ['⚡ fast: bonus yen'] : []; if (fast) yen*=1.5; }
+    if (save.miss[key]){ save.miss[key]--; if(save.miss[key]<=0) delete save.miss[key]; }
+    fb.dmg=dmg;
+    if (e.hp<=0){ yen += e.kind==='boss'?300:e.kind==='elite'?150:50; fb.kill=true; run.kills++; }
+    yen = Math.round(yen*st.yenMult);
+    run.yen += yen; fb.yen=yen;
+  } else {
+    if (st.guard>0){ st.guard--; fb.guarded=true; } else run.streak=0;
+    const raw = CFG.hurt + CFG.hurtPerFloor*run.floor + (e.kind==='boss'?CFG.gateHurtBonus:e.kind==='elite'?CFG.eliteHurtBonus:0);
+    const hurt = Math.max(3, raw-st.armor-(e.kind==='boss'?st.bossArmor:0));
+    run.hp = Math.max(0, run.hp-hurt); fb.hurt=hurt;
+    if (run.hp<=0 && st.wind){ st.wind=0; run.hp=40; fb.wind=true; }
+    if (!q.noMiss) save.miss[key] = Math.min(6, (save.miss[key]||0)+2);
+    if (!run.missed.some(c=>c.jp===q.card.jp)) run.missed.push(q.card);
+    if (e.kind==='boss'){            // the conversation moves on even after a mistake
+      e.misses++; e.hp = Math.max(0, e.hp-1);
+      if (e.hp<=0 && run.hp>0){ fb.kill=true; run.kills++; fb.yen=Math.round(300*st.yenMult); run.yen+=fb.yen; }
+    }
+  }
+  writeSave();
+  showFeedback(fb, chosen);
+  speak(q.say);
+  if (ok && !q.boss){ clearTimeout(advanceTimer); advanceTimer=setTimeout(advance, fb.kill?1300:1000); }
+}
+function advance(){
+  clearTimeout(advanceTimer);
+  if (phase!=='feedback') return;
+  if (run.hp<=0) return endRun(false);
+  if (run.enemy.hp<=0){
+    run.idx++;
+    if (run.idx>=CFG.enemiesPerFloor){
+      if (run.floor>=PLACES.length-1) return endRun(true);
+      return showPick(true, ()=>{ run.floor++; run.idx=0; run.eliteOnFloor=0; showFloorIntro(true); });
+    }
+    return showPick(false, enterEnemy);
+  }
+  nextQuestion();
+}
+function endRun(won){
+  phase='end'; stopTick();
+  if (won) run.yen += Math.round(500*run.st.yenMult);
+  save.yen += run.yen; save.runs++; if(won) save.wins++;
+  save.bestFloor = Math.max(save.bestFloor, won?PLACES.length:run.floor+1);
+  save.bestStreak = Math.max(save.bestStreak||0, run.bestStreak);
+  writeSave();
+  renderEnd(won);
+}
+
+/* ---------- upgrade pick ---------- */
+function rollPicks(rare){
+  let pool = UPGRADES.filter(u => (!u.ok || u.ok(run)) && (!!rare === !!u.rare));
+  const out=[];
+  while (out.length<3 && pool.length){
+    const u = pick(pool);
+    out.push(u); pool = pool.filter(x=>x!==u);
+  }
+  return out;
+}
+function showPick(rare, next){
+  phase='pick';
+  let opts = rollPicks(rare), extra='';
+  if (rare){   // boss win: a heal on top, and more for a flawless conversation
+    const heal = Math.min(20, run.maxHp-run.hp); run.hp += heal;
+    extra = 'You relax after the talk: ＋'+heal+' HP. ';
+    if (run.enemy.misses===0){ run.ab.hint++; run.ab.freeze++; run.ab.potion++; extra += '<br>⭐ Flawless! ＋1 Hint, ＋1 Freeze, ＋1 Potion. '; }
+    extra += '<br>';
+  }
+  const draw = ()=>{
+    app.innerHTML = '<div class="over"><div class="box">'
+      +'<h2 class="center">'+(rare?'🏆 Boss reward':'Pick 1 upgrade')+'</h2>'
+      +'<p class="sub center">'+(rare?extra+'Boss rewards are stronger than normal upgrades. ':'')+'It lasts for this run. HP '+run.hp+' / '+run.maxHp+' · <span class="yen">¥'+run.yen+'</span></p>'
+      +opts.map((u,i)=>'<button class="pick '+(u.rare?'rare':'')+'" data-i="'+i+'"><span class="pi">'+u.icon+'</span><span><b>'+(u.rare?'★ ':'')+u.name
+        +(run.picks[u.id]?' <small>(have '+run.picks[u.id]+')</small>':'')+'</b><span>'+u.desc+'</span></span></button>').join('')
+      +(run.rerolls>0?'<button class="ghost" id="reroll">🎲 Reroll choices ('+run.rerolls+' left)</button>':'')
+      +'</div></div>';
+    app.querySelectorAll('.pick').forEach(b=>b.onclick=()=>take(+b.dataset.i));
+    const rr=$('reroll'); if (rr) rr.onclick=()=>{ run.rerolls--; opts=rollPicks(rare); draw(); };
+  };
+  const take = i=>{
+    if (phase!=='pick' || !opts[i]) return;
+    const u=opts[i]; u.f(run); run.picks[u.id]=(run.picks[u.id]||0)+1;
+    phase='picked'; next();
+  };
+  run.takePick = take;
+  draw();
+}
+
+/* ---------- abilities (buttons you can press during a question) ---------- */
+function updateAbil(){
+  const q=run.q, a=run.ab, live = phase==='ask';
+  const set=(id,label,n,off)=>{ const b=$(id); if(!b) return; b.innerHTML=label+' <b>×'+n+'</b>'; b.disabled = !live || n<=0 || off; };
+  set('ab_hint','🔍 Hint',a.hint, q.hinted);
+  set('ab_freeze','⏸ Freeze',a.freeze, q.frozen);
+  set('ab_potion','🧪 Potion',a.potion, run.hp>=run.maxHp);
+}
+function useHint(){
+  const q=run.q; if (phase!=='ask' || paused || run.ab.hint<=0 || q.hinted) return;
+  run.ab.hint--; q.hinted=true;
+  if (q.type==='order'){
+    const want=q.item.chunks; let k=0;
+    while (k<q.placed.length && q.tiles[q.placed[k]]===want[k]) k++;
+    const keep=q.placed.slice(0,k);
+    const ti=q.tiles.findIndex((t,i)=>t===want[k] && keep.indexOf(i)<0);
+    keep.push(ti); q.placed=keep; renderOrder(); updateAbil(); checkOrder();
+  } else {
+    const wrong = shuffle(q.opts.map((o,i)=>i).filter(i=>!q.opts[i].ok)).slice(0,2);
+    wrong.forEach(i=>{ q.opts[i].gone=true; const b=app.querySelector('.opt[data-i="'+i+'"]'); if(b){ b.classList.add('gone'); b.disabled=true; } });
+    updateAbil();
+  }
+}
+function useFreeze(){
+  const q=run.q; if (phase!=='ask' || paused || run.ab.freeze<=0 || q.frozen) return;
+  run.ab.freeze--; q.frozen=true; const l=$('tlbl'); if(l) l.textContent='⏸ timer frozen'; updateAbil();
+}
+function usePotion(){
+  if (phase!=='ask' || paused || run.ab.potion<=0 || run.hp>=run.maxHp) return;
+  run.ab.potion--; run.hp=Math.min(run.maxHp, run.hp+30);
+  $('pbar').style.width=(100*run.hp/run.maxHp)+'%'; $('php').textContent='Your HP '+run.hp+' / '+run.maxHp; updateAbil();
+}
+
+/* ---------- timer ---------- */
+function startTick(){
+  stopTick(); let last=Date.now();
+  tick = setInterval(()=>{
+    const now=Date.now(), d=now-last; last=now;
+    if (phase!=='ask' || paused || !run || !run.q || run.q.frozen) return;
+    run.q.left -= Math.min(d,400);
+    const q=run.q, bar=$('tbar');
+    if (bar){
+      bar.style.width = Math.max(0, q.left/(q.limit*10))+'%';
+      const fastLeft = (q.limit*1000-q.left) <= q.fast*1000;
+      bar.parentNode.classList.toggle('fastzone', fastLeft);
+      const lbl=$('tlbl'); if(lbl) lbl.textContent = fastLeft ? '⚡ fast bonus ×'+run.st.fastMult.toFixed(2) : Math.ceil(q.left/1000)+'s';
+    }
+    if (q.left<=0) answer(false,-1);
+  },100);
+}
+function stopTick(){ if(tick){ clearInterval(tick); tick=null; } }
+
+/* ---------- screens ---------- */
+let app=null;
+
+function toggleRow(id, title, hint, on){
+  return '<div class="row"><div>'+title+'<small>'+hint+'</small></div><button class="tog '+(on?'on':'')+'" data-tog="'+id+'">'+(on?'✔ ON':'OFF')+'</button></div>';
+}
+function settingsHTML(){
+  return toggleRow('romaji','Romaji','Show romaji next to kana',save.set.romaji)
+       + toggleRow('sound','Sound','Speak words with the device voice',save.set.sound)
+       + toggleRow('listen','Listening questions','Turn off if you have no headphones',save.set.listen)
+       + '<div class="row"><div>Voice check<small id="vstat">'+esc(voiceStatus())+'</small></div><button class="tog" data-voicetest="1">🔊 Test</button></div>';
+}
+function wireToggles(root, rerender){
+  root.querySelectorAll('[data-tog]').forEach(b=>b.onclick=()=>{ const k=b.dataset.tog; save.set[k]=!save.set[k]; writeSave(); if(k==='sound'&&save.set.sound){ unlockVoice(); speak('こんにちは'); } rerender(); });
+  root.querySelectorAll('[data-voicetest]').forEach(b=>b.onclick=()=>{
+    unlockVoice(); speak('こんにちは。これはテストです。', true);
+    setTimeout(()=>{ loadVoices(); const v=root.querySelector('#vstat'); if(v) v.textContent=voiceStatus()+' You should have heard “konnichiwa.”'; }, 600);
+  });
+}
+
+let offlineNote='';
+function renderHome(){
+  phase='home'; stopTick();
+  const missN = Object.keys(save.miss).filter(k=>WMAP[k]).length;
+  app.innerHTML =
+    '<h1>'+J('旅')+' Tabi Quest</h1><p class="sub">Fight your way through a trip to Japan.</p>'
+   +'<button class="big" id="go">▶ Start a run</button>'
+   +'<button class="ghost" id="shop">🛒 Shop · <span class="yen">¥'+save.yen+'</span></button>'
+   +'<div class="card"><div class="stats">'
+   +'<div class="stat"><b class="yen">¥'+save.yen+'</b><span>Yen saved</span></div>'
+   +'<div class="stat"><b>'+save.bestFloor+' / '+PLACES.length+'</b><span>Best floor</span></div>'
+   +'<div class="stat"><b>'+save.runs+'</b><span>Runs ('+save.wins+' completed)</span></div>'
+   +'<div class="stat"><b>'+missN+'</b><span>Words waiting as elites</span></div>'
+   +'</div></div>'
+   +'<div class="card">'+settingsHTML()+'</div>'
+   +'<div class="card note"><b style="color:var(--text)">How to play</b><br>'
+   +'Right answers hit the enemy. Answer fast and keep a streak to build your combo. '
+   +'Wrong answers and running out of time hurt you. Words you miss come back as ★ elite enemies.<br><br>'
+   +'After each enemy you pick 1 of 3 upgrades for the run. Each floor ends with a boss: a real conversation with several steps. Finish it to win a stronger reward. '
+   +'You also carry three abilities: 🔍 Hint removes two wrong answers, ⏸ Freeze stops the timer, 🧪 Potion heals 30 HP. '
+   +'Spend yen in the shop on upgrades that stay forever.<br><br>'
+   +WORDS.length+' words, '+PARTS.length+' particle questions, '+SENTS.length+' sentences loaded. Version 0.3.1.'
+   +(offlineNote?'<br>'+offlineNote:'')+'</div>'
+   +'<button class="ghost" id="reset">Reset all progress</button>';
+  $('go').onclick = startRun; $('shop').onclick = renderShop;
+  wireToggles(app, renderHome);
+  let armed=false;
+  $('reset').onclick = function(){
+    if (!armed){ armed=true; this.textContent='Tap again to erase everything'; return; }
+    try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+    save = {yen:0, runs:0, wins:0, bestFloor:0, bestStreak:0, miss:{}, shop:{}, boss:{}, set:save.set}; writeSave(); renderHome();
+  };
+}
+
+function renderShop(){
+  phase='shop'; stopTick();
+  app.innerHTML =
+    '<div class="top"><button class="mini" id="back" aria-label="Back">←</button><div class="where">Shop · upgrades that stay forever</div><div class="yen">¥'+save.yen+'</div></div>'
+   +SHOP.map(it=>{
+      const l=lv(it.id), maxed=l>=it.max, c=shopCost(it), can=save.yen>=c;
+      return '<div class="card shopit"><div class="si">'+it.icon+'</div><div class="sinfo"><b>'+it.name+'</b>'
+        +'<div class="note">'+it.per+' per level</div>'
+        +'<div class="note">Level '+l+' / '+it.max+'  '+'■'.repeat(l)+'□'.repeat(it.max-l)+'</div></div>'
+        +'<button class="buy '+(maxed||!can?'no':'')+'" data-id="'+it.id+'" '+(maxed||!can?'disabled':'')+'>'
+        +(maxed?'MAX':can?'Buy<br>¥'+c:'Need<br>¥'+c)+'</button></div>';
+    }).join('')
+   +'<button class="ghost" id="back2">Back</button>';
+  $('back').onclick=renderHome; $('back2').onclick=renderHome;
+  app.querySelectorAll('.buy').forEach(b=>b.onclick=()=>{
+    const it=SHOP.find(x=>x.id===b.dataset.id), c=shopCost(it);
+    if (lv(it.id)>=it.max || save.yen<c) return;
+    save.yen-=c; save.shop[it.id]=lv(it.id)+1; writeSave();
+    const y=window.scrollY; renderShop(); window.scrollTo(0,y);
+  });
+}
+
+function showFloorIntro(rested){
+  phase='intro'; stopTick();
+  const p = PLACES[run.floor]; let heal=0;
+  if (rested){ heal = Math.min(run.st.restHeal, run.maxHp-run.hp); run.hp += heal; }
+  app.innerHTML = '<div class="over"><div class="box center">'
+    +'<div class="note">Floor '+(run.floor+1)+' of '+PLACES.length+'</div>'
+    +'<div class="placejp">'+J(p.jp)+'</div><h2>'+p.name+'</h2>'
+    +(rested?'<p class="sub">Floor cleared. You rest on the way: ＋'+heal+' HP<br>You have '+run.hp+' / '+run.maxHp+' HP and <span class="yen">¥'+run.yen+'</span>.</p>'
+            :'<p class="sub">'+(CFG.enemiesPerFloor-1)+' enemies, then a boss conversation.</p>')
+    +'<button class="big" id="enter">Enter ▶</button></div></div>';
+  $('enter').onclick = ()=>{ enterEnemy(); startTick(); };
+}
+
+function renderFight(){
+  const p=PLACES[run.floor], e=run.enemy, q=run.q;
+  let body;
+  if (q.type==='order'){
+    body = '<div class="tray" id="tray"></div><div class="pool" id="pool"></div>';
+  } else {
+    body = '<div class="opts">'+q.opts.map((o,i)=>'<button class="opt" data-i="'+i+'"><span class="n">'+(i+1)+'</span>'+o.h+'<span class="mk"></span></button>').join('')+'</div>';
+  }
+  app.innerHTML =
+    '<div class="top"><button class="mini" id="menuBtn" aria-label="Pause">☰</button>'
+   +'<div class="where">Floor '+(run.floor+1)+'/'+PLACES.length+' · '+J(p.jp)+' · Enemy '+(run.idx+1)+'/'+CFG.enemiesPerFloor+'</div>'
+   +'<div class="yen">¥'+run.yen+'</div></div>'
+   +'<div class="enemy '+e.kind+'" id="enemyBox"><div class="face">'+e.face+'</div><div class="info">'
+   +(e.tag?'<div class="tag">'+e.tag+'</div>':'')
+   +'<div class="name">'+(e.kind==='elite'?J(e.name):esc(e.name))+'</div>'
+   +'<div class="bar e"><i id="ebar" style="width:'+(100*e.hp/e.maxHp)+'%"></i></div>'
+   +'<div class="hpnum" id="ehp">'+ehpText(e)+'</div></div></div>'
+   +'<div class="timer fastzone"><i id="tbar"></i></div><div class="timerlbl" id="tlbl"></div>'
+   +'<div class="prompt'+(q.boss?' bossp':'')+'">'+(q.pre||'')+'<div class="ask">'+esc(q.ask)+'</div>'+q.main+'</div>'
+   +body
+   +'<div class="me" id="meBox">'
+   +'<div class="abil"><button class="ab" id="ab_hint"></button><button class="ab" id="ab_freeze"></button><button class="ab" id="ab_potion"></button></div>'
+   +'<div class="line"><span id="php">Your HP '+run.hp+' / '+run.maxHp+'</span>'
+   +'<span class="combo" id="combo">'+comboText()+'</span></div>'
+   +'<div class="bar p"><i id="pbar" style="width:'+(100*run.hp/run.maxHp)+'%"></i></div></div>'
+   +'<div id="sheetHost"></div>';
+  $('menuBtn').onclick = showPause;
+  $('ab_hint').onclick=useHint; $('ab_freeze').onclick=useFreeze; $('ab_potion').onclick=usePotion;
+  updateAbil();
+  if (q.type==='order') renderOrder();
+  else app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>choose(+b.dataset.i));
+  const hb=$('hearBtn'); if (hb) hb.onclick=()=>speak(q.sayStart||q.say);
+  const sx=$('showTxt'); if (sx) sx.onclick=()=>{ $('hidTxt').style.display='block'; sx.style.display='none'; };
+}
+function comboText(){
+  const g = run.st.guard>0 ? ' · 🧿'+run.st.guard : '';
+  return (run.streak>0 ? '🔥 Streak '+run.streak+' · Combo ×'+comboMult(run.streak+1).toFixed(2) : 'No streak yet') + g;
+}
+function choose(i){ if(phase!=='ask'||paused||!run.q.opts[i]||run.q.opts[i].gone) return; answer(!!run.q.opts[i].ok, i); }
+function checkOrder(){
+  const q=run.q;
+  if (phase==='ask' && q.placed.length===q.tiles.length) answer(q.placed.map(i=>q.tiles[i]).join('|')===q.item.chunks.join('|'), 0);
+}
+function renderOrder(){
+  const q=run.q, tray=$('tray'), pool=$('pool'); if(!tray) return;
+  tray.innerHTML = q.placed.map((ti,pos)=>'<button class="tile" lang="ja" data-pos="'+pos+'">'+esc(q.tiles[ti])+'</button>').join('');
+  pool.innerHTML = q.tiles.map((t,ti)=>'<button class="tile '+(q.placed.indexOf(ti)>=0?'used':'')+'" lang="ja" data-ti="'+ti+'">'+esc(t)+'</button>').join('');
+  tray.querySelectorAll('.tile').forEach(b=>b.onclick=()=>{ if(phase!=='ask'||paused)return; q.placed.splice(+b.dataset.pos,1); renderOrder(); });
+  pool.querySelectorAll('.tile').forEach(b=>b.onclick=()=>{ if(phase!=='ask'||paused)return; q.placed.push(+b.dataset.ti); renderOrder(); checkOrder(); });
+}
+
+function cardHTML(c, label){
+  const showRd = c.kana.replace(/ /g,'') !== c.jp;
+  return '<div class="ans"><div class="lbl">'+label+'</div>'
+    +'<div class="jp '+(c.jp.length>9?'long':'')+'">'+J(c.jp)+'</div>'
+    +(showRd?'<div class="rd">'+J(c.kana)+'</div>':'')
+    +(save.set.romaji?'<div class="rm">'+esc(romaji(c.kana))+'</div>':'')
+    +'<div class="mn">'+esc(c.mean)+'</div></div>';
+}
+/* The "Why" box shown after a miss. */
+function whyHTML(q, chosen){
+  const L=[]; const o = (chosen>=0 && q.opts) ? q.opts[chosen] : null;
+  if (q.boss){
+    const st=q.step;
+    if (st.npc && (q.type==='breply'||q.type==='order')) L.push('They said: '+J(st.npc.jp)+' “'+esc(st.npc.en)+'”');
+    if (q.type==='breply' && o && o.ln && !o.ok) L.push('You picked '+J(o.ln.jp)+'. That means “'+esc(o.ln.en)+'”');
+    if (q.type==='order'){
+      if (q.placed.length) L.push('You built: '+J(q.placed.map(i=>q.tiles[i]).join(' ')));
+      L.push('Right order: '+J(q.item.chunks.join(' ')));
+    }
+    if (st.why) L.push(esc(st.why));
+  } else if (q.type==='particle'){
+    L.push(esc(q.item.why));
+    if (o && !o.ok && PARTICLE_INFO[o.p]) L.push('You picked '+J(o.p)+'. '+J(o.p)+' '+esc(PARTICLE_INFO[o.p])+'.');
+  } else if (q.type==='order'){
+    if (q.placed.length) L.push('You built: '+J(q.placed.map(i=>q.tiles[i]).join(' ')));
+    L.push('Right order: '+J(q.item.chunks.join(' ')));
+    L.push(esc(q.item.why));
+    L.push('Tip: a particle comes right after the word it marks. The verb or ですか comes last.');
+  } else {
+    if (o && o.src){
+      const s=o.src;
+      L.push('You picked '+J(s.jp)+(s.kana.replace(/ /g,'')!==s.jp?' ('+J(s.kana)+')':'')+'. That means “'+esc(s.mean)+'.”');
+    }
+    if (o && o.note) L.push(esc(o.note));
+    const hints=[], seen={};
+    for (const ch of q.item.jp){ if (KH[ch] && !seen[ch]){ seen[ch]=1; hints.push(J(ch)+' '+esc(KH[ch])); } }
+    if (hints.length) L.push('Kanji: '+hints.slice(0,5).join(' · '));
+  }
+  return L.length ? '<div class="why"><div class="lbl">Why</div>'+L.map(x=>'<div>'+x+'</div>').join('')+'</div>' : '';
+}
+function showFeedback(fb, chosen){
+  const q=run.q, e=run.enemy;
+  // mark the buttons with icons as well as colour
+  app.querySelectorAll('.opt').forEach(b=>{
+    const i=+b.dataset.i; b.disabled=true;
+    if (q.opts[i].ok){ b.classList.add('right'); b.querySelector('.mk').textContent='✔'; }
+    else if (i===chosen){ b.classList.add('wrong'); b.querySelector('.mk').textContent='✘'; }
+  });
+  app.querySelectorAll('.tile').forEach(b=>b.disabled=true);
+  $('ebar').style.width=(100*e.hp/e.maxHp)+'%'; $('ehp').textContent=ehpText(e);
+  $('pbar').style.width=(100*run.hp/run.maxHp)+'%'; $('php').textContent='Your HP '+run.hp+' / '+run.maxHp;
+  $('combo').textContent=comboText(); updateAbil();
+  let h;
+  if (fb.ok && q.boss){
+    const npc=q.step.npc, mine=(q.type==='breply'||q.type==='order');
+    h = '<div class="sheet hit"><div class="in"><div class="head">✔ Correct'+(fb.kill?' · Conversation complete!':'')+'</div>'
+      +'<div class="detail">'+(fb.tags.length?fb.tags.join(' · ')+' · ':'')+'<span class="yen">＋¥'+fb.yen+'</span></div>'
+      +cardHTML(q.card, mine?'You said':'They said')
+      +(mine&&npc?'<div class="why"><div>They said: '+J(npc.jp)+' “'+esc(npc.en)+'”</div></div>':'')
+      +'<div class="btns"><button class="ghost" id="again" aria-label="Hear it">🔊</button><button class="big" id="cont">'+(fb.kill?'Claim reward ▶':'Continue ▶')+'</button></div></div></div>';
+  } else if (fb.ok){
+    $('enemyBox').classList.add('shake');
+    h = '<div class="sheet hit"><div class="in pop"><div class="head">✔ Correct'+(fb.kill?' · Enemy defeated!':'')+'</div>'
+      +'<div class="detail">You hit for '+fb.dmg+(fb.tags.length?' · '+fb.tags.join(' · '):'')+' · <span class="yen">＋¥'+fb.yen+'</span></div>'
+      +'<div class="detail">'+J(q.card.jp)+(q.card.kana.replace(/ /g,'')!==q.card.jp?' · '+J(q.card.kana):'')+' · '+esc(q.card.mean)+'</div></div></div>';
+  } else {
+    $('meBox').classList.add('shake');
+    h = '<div class="sheet miss"><div class="in"><div class="head">'+(fb.timeout?'⏱ Out of time':'✘ Wrong')+'</div>'
+      +'<div class="detail">You take '+fb.hurt+' damage. '+(fb.guarded?'🧿 Omamori kept your streak.':'Streak lost.')
+      +(fb.wind?' 🪽 Second Wind saved you!':'')+(q.isWord?' This word will come back as an elite.':'')+(q.boss&&run.hp>0?(fb.kill?' The conversation is over.':' The conversation goes on.'):'')+'</div>'
+      +cardHTML(q.card,'Correct answer')
+      +whyHTML(q, fb.timeout?-1:chosen)
+      +'<div class="btns"><button class="ghost" id="again" aria-label="Hear it">🔊</button><button class="big" id="cont">'+(run.hp<=0?'See results ▶':'Continue ▶')+'</button></div></div></div>';
+  }
+  $('sheetHost').innerHTML = h;
+  if ($('cont')){ $('cont').onclick=advance; $('again').onclick=()=>speak(q.say); }
+}
+
+function buildHTML(){
+  const ids=Object.keys(run.picks);
+  if (!ids.length) return '<div class="note">No upgrades picked yet.</div>';
+  return ids.map(id=>'<div class="note" style="color:var(--text)">'+UMAP[id].icon+' '+UMAP[id].name+(run.picks[id]>1?' ×'+run.picks[id]:'')+'</div>').join('');
+}
+function showPause(){
+  if (!run || (phase!=='ask' && phase!=='feedback')) return;
+  if ($('pauseOver')) return;
+  paused=true;
+  const d=document.createElement('div'); d.className='over'; d.id='pauseOver';
+  const draw=()=>{
+    d.innerHTML='<div class="box"><h2 class="center">Paused</h2><button class="big" id="resume">▶ Resume</button>'
+      +'<div class="card"><b>Your upgrades this run</b>'+buildHTML()+'</div>'
+      +'<div class="card">'+settingsHTML()+'</div>'
+      +'<button class="ghost" id="quit">End this run (keep the yen)</button></div>';
+    d.querySelector('#resume').onclick=()=>{ d.remove(); paused=false; };
+    let armed=false;
+    d.querySelector('#quit').onclick=function(){ if(!armed){armed=true; this.textContent='Tap again to end the run'; return;} d.remove(); paused=false; clearTimeout(advanceTimer); endRun(false); };
+    wireToggles(d, draw);
+  };
+  draw(); document.body.appendChild(d);
+}
+
+function renderEnd(won){
+  const mins = Math.max(1, Math.round((Date.now()-run.t0)/60000));
+  const acc = run.total ? Math.round(100*run.right/run.total) : 0;
+  const p = PLACES[Math.min(run.floor,PLACES.length-1)];
+  app.innerHTML =
+    '<h1>'+(won?'🎌 Trip complete!':'💤 Trip cut short')+'</h1>'
+   +'<p class="sub">'+(won?'You cleared all '+PLACES.length+' floors. Bonus yen added.':'You made it to floor '+(run.floor+1)+': '+J(p.jp)+' '+p.name+'.')+'</p>'
+   +'<div class="card"><div class="stats">'
+   +'<div class="stat"><b class="yen">＋¥'+run.yen+'</b><span>Yen earned</span></div>'
+   +'<div class="stat"><b>'+run.right+' / '+run.total+'</b><span>Right answers ('+acc+'%)</span></div>'
+   +'<div class="stat"><b>'+run.bestStreak+'</b><span>Best streak</span></div>'
+   +'<div class="stat"><b>'+mins+' min</b><span>'+run.kills+' enemies beaten</span></div>'
+   +'</div></div>'
+   +'<button class="big" id="again2">▶ New run</button>'
+   +'<button class="ghost" id="shop2">🛒 Shop · <span class="yen">¥'+save.yen+'</span></button>'
+   +(run.missed.length ? '<div class="card"><b>Missed this run</b><div class="note">These come back more often, as elites.</div>'
+       +run.missed.map(c=>'<div class="missrow"><div class="a">'+J(c.jp)+'</div><div class="b">'
+       +(c.kana.replace(/ /g,'')!==c.jp?J(c.kana)+' · ':'')+(save.set.romaji?esc(romaji(c.kana))+' · ':'')+esc(c.mean)+'</div></div>').join('')+'</div>'
+     : '<div class="card">No misses. Perfect run!</div>')
+   +'<button class="ghost" id="home">Home</button>';
+  $('again2').onclick=startRun; $('home').onclick=renderHome; $('shop2').onclick=renderShop;
+  window.scrollTo(0,0);
+}
+
+/* ---------- start-up ---------- */
+function boot(){
+  app = $('app');
+  loadSave();
+  if (typeof speechSynthesis!=='undefined'){ loadVoices(); try{ speechSynthesis.onvoiceschanged=loadVoices; }catch(e){} }
+  document.addEventListener('visibilitychange', ()=>{ if(document.hidden && phase==='ask') showPause(); });
+  document.addEventListener('keydown', ev=>{
+    if (paused || !run) return;
+    if (phase==='ask' && run.q && run.q.type!=='order' && ev.key>='1' && ev.key<='4') choose(+ev.key-1);
+    else if (phase==='pick' && ev.key>='1' && ev.key<='3') run.takePick(+ev.key-1);
+    else if (phase==='feedback' && (ev.key==='Enter'||ev.key===' ')){ ev.preventDefault(); advance(); }
+  });
+  if (location.protocol==='file:') offlineNote='Running from a file on this computer. Works offline.';
+  else if ('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(()=>{
+      offlineNote='✔ Saved on this device. Works offline.'; if(phase==='home') renderHome();
+    }).catch(()=>{});
+  }
+  renderHome();
+}
+if (typeof document!=='undefined' && document.getElementById) boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "Tabi Quest",
+  "short_name": "Tabi Quest",
+  "description": "A Japanese study roguelike for the trip.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#12172b",
+  "theme_color": "#12172b",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
